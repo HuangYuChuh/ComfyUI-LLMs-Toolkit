@@ -1,6 +1,3 @@
-git+https://github.com/deepseek-ai/Janus.git
-torch
 numpy
 Pillow
 aiohttp
-transformers
