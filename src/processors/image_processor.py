@@ -24,7 +24,7 @@ class ImagePreprocessor:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("processed_image",)
     FUNCTION = "preprocess"
-    CATEGORY = "DeepSeek_Toolkit/Image"
+    CATEGORY = "🚦ComfyUI_LLMs_Toolkit/Image"
 
     def preprocess(self, image: Optional[Union[str, Image.Image]], format: str = "PNG", quality: str = "High"):
         quality_map = {"High": 95, "Medium": 75, "Low": 50}

@@ -40,7 +40,7 @@ class LLM_Loader:
     RETURN_TYPES = ("STRING", "STRING")
     RETURN_NAMES = ("base_url", "model")
     FUNCTION = "generate"
-    CATEGORY = "DeepSeek_Toolkit/Loader"
+    CATEGORY = "🚦ComfyUI_LLMs_Toolkit/Loader"
 
     def generate(self, base_url: str, model: str):
         # 定义 base_url 映射表
