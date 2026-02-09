@@ -2,7 +2,7 @@ import json
 from typing import Tuple
 
 
-class JSONBuilder5:
+class JSONBuilderBasic:
     """Build JSON object with 5 key-value pairs."""
 
     @classmethod
@@ -28,7 +28,7 @@ class JSONBuilder5:
     RETURN_NAMES = ("json_string",)
     FUNCTION = "build"
     CATEGORY = "🚦ComfyUI_LLMs_Toolkit/JSON"
-    DESCRIPTION = "Build JSON with 5 key-value pairs. Keys are editable, values are connected from upstream."
+    DESCRIPTION = "Build JSON with 5 key-value pairs (Basic)."
 
     def build(self, key_1, key_2, key_3, key_4, key_5, **kwargs) -> Tuple[str]:
         result = {}
@@ -48,7 +48,7 @@ class JSONBuilder5:
         return (json_str,)
 
 
-class JSONBuilder10:
+class JSONBuilderAdvanced:
     """Build JSON object with 10 key-value pairs."""
 
     @classmethod
@@ -84,7 +84,7 @@ class JSONBuilder10:
     RETURN_NAMES = ("json_string",)
     FUNCTION = "build"
     CATEGORY = "🚦ComfyUI_LLMs_Toolkit/JSON"
-    DESCRIPTION = "Build JSON with 10 key-value pairs. Keys are editable, values are connected from upstream."
+    DESCRIPTION = "Build JSON with 10 key-value pairs (Advanced)."
 
     def build(self, key_1, key_2, key_3, key_4, key_5, 
               key_6, key_7, key_8, key_9, key_10, **kwargs) -> Tuple[str]:
@@ -108,11 +108,11 @@ class JSONBuilder10:
 
 # Register nodes
 NODE_CLASS_MAPPINGS = {
-    "JSONBuildCompact": JSONBuilder5,
-    "JSONBuildExtended": JSONBuilder10,
+    "JSONBuilderBasic": JSONBuilderBasic,
+    "JSONBuilderAdvanced": JSONBuilderAdvanced,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "JSONBuildCompact": "JSON Build ×5",
-    "JSONBuildExtended": "JSON Build ×10",
+    "JSONBuilderBasic": "JSON Builder Basic",
+    "JSONBuilderAdvanced": "JSON Builder Advanced",
 }
