@@ -30,7 +30,7 @@ class ImagePreprocessor:
         quality_map = {"High": 95, "Medium": 75, "Low": 50}
         quality_str = quality  # Ensure quality is treated as a string
         quality_val = quality_map.get(quality_str, 95)  # Default to High if invalid value
-        print(f"Selected quality: {quality_val}")  # Debugging line
+        print(f"[LLMs_Toolkit] quality={quality_val}")
 
         if image is None:
             raise ValueError("Image input cannot be None")
@@ -50,7 +50,7 @@ class ImagePreprocessor:
         # Resize image based on quality
         size_map = {"High": 1024, "Medium": 768, "Low": 512}
         max_size = size_map.get(quality_str, 1024)
-        print(f"Resizing image to max dimension: {max_size}")
+        print(f"[LLMs_Toolkit] resize={max_size}px")
         image.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
 
         # Convert PIL image to base64 string
@@ -58,8 +58,8 @@ class ImagePreprocessor:
         image.save(buffered, format=format, quality=quality_val)
         img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
         image_url = f"data:image/{format.lower()};base64,{img_str}"
-        print(f"Image size with quality {quality}: {buffered.tell()} bytes")
-        print(f"Generated image URL: {image_url[:50]}...")  # 打印生成的图像 URL 前 50 个字符
+        size_kb = buffered.tell() / 1024
+        print(f"[LLMs_Toolkit] encoded={size_kb:.1f}KB {format}")
 
         return (image_url,)
 
