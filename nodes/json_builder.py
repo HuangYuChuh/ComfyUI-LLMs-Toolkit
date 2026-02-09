@@ -6,8 +6,11 @@ class JSONBuilder:
     """
     Build JSON object from multiple key-value inputs.
     
-    Uses dynamic input count - adjust 'inputcount' and click Update 
+    Uses dynamic input count - adjust 'input_count' and click Update 
     to add more key-value pairs.
+    
+    Keys can be typed directly or connected from upstream.
+    Values must be connected from upstream nodes.
     """
 
     @classmethod
@@ -15,11 +18,11 @@ class JSONBuilder:
         return {
             "required": {
                 "input_count": ("INT", {"default": 2, "min": 1, "max": 100, "step": 1}),
-                "key_1": ("STRING", {"default": ""}),
-                "key_2": ("STRING", {"default": ""}),
             },
             "optional": {
+                "key_1": ("STRING", {"default": "key1", "forceInput": False}),
                 "value_1": ("STRING", {"default": "", "forceInput": True}),
+                "key_2": ("STRING", {"default": "key2", "forceInput": False}),
                 "value_2": ("STRING", {"default": "", "forceInput": True}),
             }
         }
@@ -30,8 +33,8 @@ class JSONBuilder:
     CATEGORY = "🚦ComfyUI_LLMs_Toolkit/JSON"
     DESCRIPTION = """
 Build JSON from key-value pairs.
-- Keys are manual text inputs
-- Values are connected from upstream nodes
+- Keys can be typed directly OR connected from upstream
+- Values must be connected from upstream nodes
 - Adjust **input_count** and click Update inputs to add more pairs
 """
 
@@ -50,7 +53,7 @@ Build JSON from key-value pairs.
                     parsed_value = json.loads(value)
                     result[key.strip()] = parsed_value
                 except (json.JSONDecodeError, TypeError):
-                    result[key.strip()] = value
+                    result[key.strip()] = value if value else ""
         
         json_str = json.dumps(result, ensure_ascii=False, indent=2)
         print(f"# [🚦 LLMs_Toolkit] built JSON with {len(result)} keys")
