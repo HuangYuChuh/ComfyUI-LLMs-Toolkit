@@ -12,8 +12,7 @@ class JSONExtractor:
         return {
             "required": {
                 "json_string": ("STRING", {
-                    "multiline": True,
-                    "default": "{}"
+                    "forceInput": True
                 }),
                 "key": ("STRING", {
                     "default": "",
