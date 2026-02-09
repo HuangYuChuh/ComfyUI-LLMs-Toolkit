@@ -15,12 +15,11 @@ class JSONBuilder:
         return {
             "required": {
                 "inputcount": ("INT", {"default": 2, "min": 1, "max": 100, "step": 1}),
+                "key_1": ("STRING", {"default": ""}),
+                "key_2": ("STRING", {"default": ""}),
             },
             "optional": {
-                "base_json": ("STRING", {"forceInput": True}),
-                "key_1": ("STRING", {"default": ""}),
                 "value_1": ("STRING", {"default": "", "forceInput": True}),
-                "key_2": ("STRING", {"default": ""}),
                 "value_2": ("STRING", {"default": "", "forceInput": True}),
             }
         }
@@ -31,21 +30,14 @@ class JSONBuilder:
     CATEGORY = "🚦ComfyUI_LLMs_Toolkit/JSON"
     DESCRIPTION = """
 Build JSON from key-value pairs.
-- Adjust **inputcount** and click Update to add more inputs.
-- Connect **base_json** to chain multiple builders.
+- Keys are manual text inputs
+- Values are connected from upstream nodes
+- Adjust **inputcount** and click Update inputs to add more pairs
 """
 
-    def build(self, inputcount: int, base_json: str = None, **kwargs) -> Tuple[str]:
+    def build(self, inputcount: int, **kwargs) -> Tuple[str]:
         """Build JSON from key-value pairs."""
-        
-        # Start with base JSON if provided
-        if base_json:
-            try:
-                result = json.loads(base_json)
-            except json.JSONDecodeError:
-                result = {}
-        else:
-            result = {}
+        result = {}
         
         # Add key-value pairs
         for i in range(1, inputcount + 1):
