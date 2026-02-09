@@ -9,8 +9,7 @@ class JSONBuilder:
     Uses dynamic input count - adjust 'input_count' and click Update 
     to add more key-value pairs.
     
-    Keys can be typed directly or connected from upstream.
-    Values must be connected from upstream nodes.
+    Keys are editable text widgets, values are input connections.
     """
 
     @classmethod
@@ -20,10 +19,16 @@ class JSONBuilder:
                 "input_count": ("INT", {"default": 2, "min": 1, "max": 100, "step": 1}),
             },
             "optional": {
-                "key_1": ("STRING", {"default": "key1", "forceInput": False}),
+                # Initial key widgets - more are added dynamically via frontend
+                "key_1": ("STRING", {"default": "key1"}),
+                "key_2": ("STRING", {"default": "key2"}),
+                # Value inputs - must be connected
                 "value_1": ("STRING", {"default": "", "forceInput": True}),
-                "key_2": ("STRING", {"default": "key2", "forceInput": False}),
                 "value_2": ("STRING", {"default": "", "forceInput": True}),
+            },
+            # Hidden inputs to receive dynamically added keys
+            "hidden": {
+                "extra_keys": "DICT",
             }
         }
 
@@ -33,7 +38,7 @@ class JSONBuilder:
     CATEGORY = "🚦ComfyUI_LLMs_Toolkit/JSON"
     DESCRIPTION = """
 Build JSON from key-value pairs.
-- Keys can be typed directly OR connected from upstream
+- Keys are editable text boxes
 - Values must be connected from upstream nodes
 - Adjust **input_count** and click Update inputs to add more pairs
 """
@@ -44,7 +49,7 @@ Build JSON from key-value pairs.
         
         # Add key-value pairs
         for i in range(1, input_count + 1):
-            key = kwargs.get(f"key_{i}", "")
+            key = kwargs.get(f"key_{i}", f"key{i}")
             value = kwargs.get(f"value_{i}", "")
             
             if key and key.strip():

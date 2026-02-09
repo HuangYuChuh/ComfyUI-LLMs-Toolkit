@@ -3,53 +3,66 @@ import { app } from "../../../scripts/app.js";
 /**
  * JSON Builder Extension for ComfyUI-LLMs-Toolkit
  * 
- * Dynamically adds key_N / value_N input pairs based on input_count.
- * Keys use forceInput: false (can type directly or connect)
- * Values use forceInput: true (must connect from upstream)
+ * Features:
+ * - Dynamic key_N as TEXT WIDGETS (editable text boxes)
+ * - Dynamic value_N as INPUT SLOTS (connections)
+ * - Custom serialization to persist dynamic widgets
  */
 
 app.registerExtension({
     name: "LLMs_Toolkit.JSONBuilder",
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         if (nodeData.name === "JSONBuilder") {
+
+            // Store original onNodeCreated if exists
+            const origOnNodeCreated = nodeType.prototype.onNodeCreated;
+
             nodeType.prototype.onNodeCreated = function () {
+                if (origOnNodeCreated) {
+                    origOnNodeCreated.apply(this, arguments);
+                }
+
                 // Find input_count widget
                 const inputCountWidget = this.widgets.find(w => w.name === "input_count");
                 const inputCountIdx = this.widgets.indexOf(inputCountWidget);
 
-                // Create styled update button
+                // Helper function to add a key widget with proper serialization
+                const addKeyWidget = (node, name, defaultValue = "") => {
+                    const widget = node.addWidget("text", name, defaultValue, () => { }, {});
+                    // Ensure widget value is serialized
+                    widget.serializeValue = () => widget.value;
+                    return widget;
+                };
+
+                // Create update button
                 const button = this.addWidget("button", "⟳ Update inputs", null, () => {
                     const inputCountWidget = this.widgets.find(w => w.name === "input_count");
                     if (!inputCountWidget) return;
 
                     const target_count = inputCountWidget.value;
 
-                    // Count current key inputs (they are in inputs now, not widgets)
-                    const current_keys = this.inputs ? this.inputs.filter(input =>
-                        input.name && input.name.startsWith("key_")
-                    ).length : 0;
+                    // Count current key widgets
+                    const current_keys = this.widgets.filter(w =>
+                        w.name && w.name.startsWith("key_")
+                    ).length;
 
                     if (target_count === current_keys) return;
 
                     if (target_count < current_keys) {
-                        // Remove excess inputs
+                        // Remove excess widgets and inputs
                         const to_remove = current_keys - target_count;
                         for (let i = 0; i < to_remove; i++) {
                             const idx = current_keys - i;
 
                             // Remove value input
-                            const value_idx = this.inputs.findIndex(
-                                input => input.name === `value_${idx}`
-                            );
-                            if (value_idx !== -1) this.removeInput(value_idx);
+                            if (this.inputs) {
+                                const value_idx = this.inputs.findIndex(
+                                    input => input.name === `value_${idx}`
+                                );
+                                if (value_idx !== -1) this.removeInput(value_idx);
+                            }
 
-                            // Remove key input
-                            const key_idx = this.inputs.findIndex(
-                                input => input.name === `key_${idx}`
-                            );
-                            if (key_idx !== -1) this.removeInput(key_idx);
-
-                            // Also remove key widget if exists
+                            // Remove key widget
                             const key_widget_idx = this.widgets.findIndex(
                                 w => w.name === `key_${idx}`
                             );
@@ -58,11 +71,9 @@ app.registerExtension({
                             }
                         }
                     } else {
-                        // Add new input pairs
+                        // Add new key widgets and value inputs
                         for (let i = current_keys + 1; i <= target_count; i++) {
-                            // Add key input
-                            this.addInput(`key_${i}`, "STRING");
-                            // Add value input
+                            addKeyWidget(this, `key_${i}`, `key${i}`);
                             this.addInput(`value_${i}`, "STRING");
                         }
                     }
@@ -70,7 +81,7 @@ app.registerExtension({
                     this.setSize(this.computeSize());
                 });
 
-                // Custom draw function for premium button styling
+                // Custom button drawing
                 button.draw = function (ctx, node, widget_width, y, H) {
                     const margin = 10;
                     const x = margin;
@@ -78,7 +89,6 @@ app.registerExtension({
                     const h = H;
                     const radius = 6;
 
-                    // Button background with gradient
                     const gradient = ctx.createLinearGradient(x, y, x, y + h);
                     gradient.addColorStop(0, "#3a6ea5");
                     gradient.addColorStop(1, "#2c5282");
@@ -88,25 +98,15 @@ app.registerExtension({
                     ctx.fillStyle = gradient;
                     ctx.fill();
 
-                    // Border
                     ctx.strokeStyle = "#4a90d9";
                     ctx.lineWidth = 1;
                     ctx.stroke();
 
-                    // Text
                     ctx.fillStyle = "#ffffff";
                     ctx.font = "bold 12px 'Segoe UI', Arial, sans-serif";
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
                     ctx.fillText(this.label || "⟳ Update inputs", x + w / 2, y + h / 2);
-
-                    // Top highlight
-                    ctx.beginPath();
-                    ctx.moveTo(x + radius, y + 1);
-                    ctx.lineTo(x + w - radius, y + 1);
-                    ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
                 };
 
                 // Move button right after input_count
@@ -116,6 +116,56 @@ app.registerExtension({
                         this.widgets.splice(buttonIdx, 1);
                         this.widgets.splice(inputCountIdx + 1, 0, button);
                     }
+                }
+            };
+
+            // Save dynamic widgets to node properties on serialize
+            const origOnSerialize = nodeType.prototype.onSerialize;
+            nodeType.prototype.onSerialize = function (o) {
+                if (origOnSerialize) {
+                    origOnSerialize.apply(this, arguments);
+                }
+
+                // Save key widget values
+                const keyWidgets = {};
+                this.widgets.forEach(w => {
+                    if (w.name && w.name.startsWith("key_")) {
+                        keyWidgets[w.name] = w.value;
+                    }
+                });
+                o.keyWidgets = keyWidgets;
+            };
+
+            // Restore dynamic widgets on configure (load)
+            const origOnConfigure = nodeType.prototype.onConfigure;
+            nodeType.prototype.onConfigure = function (o) {
+                if (origOnConfigure) {
+                    origOnConfigure.apply(this, arguments);
+                }
+
+                // Restore key widgets if saved
+                if (o.keyWidgets) {
+                    const input_count = this.widgets.find(w => w.name === "input_count")?.value || 2;
+
+                    // Create missing key widgets
+                    for (let i = 1; i <= input_count; i++) {
+                        const name = `key_${i}`;
+                        let widget = this.widgets.find(w => w.name === name);
+
+                        if (!widget) {
+                            widget = this.addWidget("text", name, o.keyWidgets[name] || `key${i}`, () => { }, {});
+                            widget.serializeValue = () => widget.value;
+                        } else {
+                            widget.value = o.keyWidgets[name] || widget.value;
+                        }
+
+                        // Ensure value input exists
+                        if (!this.inputs?.find(inp => inp.name === `value_${i}`)) {
+                            this.addInput(`value_${i}`, "STRING");
+                        }
+                    }
+
+                    this.setSize(this.computeSize());
                 }
             };
         }
