@@ -4,31 +4,33 @@ from typing import Tuple
 
 class JSONBuilder:
     """
-    Build JSON object from multiple key-value inputs.
+    Build JSON object from key-value pairs.
     
-    Uses dynamic input count - adjust 'input_count' and click Update 
-    to add more key-value pairs.
-    
-    Keys are editable text widgets, values are input connections.
+    Enter key names in the multiline text box (one per line).
+    Connect values to the value_1 ~ value_10 inputs.
     """
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "input_count": ("INT", {"default": 2, "min": 1, "max": 100, "step": 1}),
+                "keys": ("STRING", {
+                    "default": "key1\nkey2",
+                    "multiline": True,
+                    "dynamicPrompts": False,
+                }),
             },
             "optional": {
-                # Initial key widgets - more are added dynamically via frontend
-                "key_1": ("STRING", {"default": "key1"}),
-                "key_2": ("STRING", {"default": "key2"}),
-                # Value inputs - must be connected
                 "value_1": ("STRING", {"default": "", "forceInput": True}),
                 "value_2": ("STRING", {"default": "", "forceInput": True}),
-            },
-            # Hidden inputs to receive dynamically added keys
-            "hidden": {
-                "extra_keys": "DICT",
+                "value_3": ("STRING", {"default": "", "forceInput": True}),
+                "value_4": ("STRING", {"default": "", "forceInput": True}),
+                "value_5": ("STRING", {"default": "", "forceInput": True}),
+                "value_6": ("STRING", {"default": "", "forceInput": True}),
+                "value_7": ("STRING", {"default": "", "forceInput": True}),
+                "value_8": ("STRING", {"default": "", "forceInput": True}),
+                "value_9": ("STRING", {"default": "", "forceInput": True}),
+                "value_10": ("STRING", {"default": "", "forceInput": True}),
             }
         }
 
@@ -38,27 +40,33 @@ class JSONBuilder:
     CATEGORY = "🚦ComfyUI_LLMs_Toolkit/JSON"
     DESCRIPTION = """
 Build JSON from key-value pairs.
-- Keys are editable text boxes
-- Values must be connected from upstream nodes
-- Adjust **input_count** and click Update inputs to add more pairs
+
+**Usage:**
+1. Enter key names in the text box (one per line)
+2. Connect values to value_1, value_2, etc.
+3. Line 1 → value_1, Line 2 → value_2, ...
+
+Supports up to 10 key-value pairs.
 """
 
-    def build(self, input_count: int, **kwargs) -> Tuple[str]:
+    def build(self, keys: str, **kwargs) -> Tuple[str]:
         """Build JSON from key-value pairs."""
         result = {}
         
-        # Add key-value pairs
-        for i in range(1, input_count + 1):
-            key = kwargs.get(f"key_{i}", f"key{i}")
+        # Parse keys from multiline text
+        key_list = [k.strip() for k in keys.strip().split('\n') if k.strip()]
+        
+        # Match keys with values
+        for i, key in enumerate(key_list[:10], start=1):
             value = kwargs.get(f"value_{i}", "")
             
-            if key and key.strip():
+            if key:
                 # Try to parse value as JSON, otherwise use as string
                 try:
                     parsed_value = json.loads(value)
-                    result[key.strip()] = parsed_value
+                    result[key] = parsed_value
                 except (json.JSONDecodeError, TypeError):
-                    result[key.strip()] = value if value else ""
+                    result[key] = value if value else ""
         
         json_str = json.dumps(result, ensure_ascii=False, indent=2)
         print(f"# [🚦 LLMs_Toolkit] built JSON with {len(result)} keys")
