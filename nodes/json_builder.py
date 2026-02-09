@@ -108,11 +108,11 @@ class JSONBuilder10:
 
 # Register nodes
 NODE_CLASS_MAPPINGS = {
-    "JSONBuilder5": JSONBuilder5,
-    "JSONBuilder10": JSONBuilder10,
+    "JSONBuildCompact": JSONBuilder5,
+    "JSONBuildExtended": JSONBuilder10,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "JSONBuilder5": "JSON Builder (5)",
-    "JSONBuilder10": "JSON Builder (10)",
+    "JSONBuildCompact": "JSON Build ×5",
+    "JSONBuildExtended": "JSON Build ×10",
 }
