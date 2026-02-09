@@ -14,7 +14,7 @@ class JSONBuilder:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "inputcount": ("INT", {"default": 2, "min": 1, "max": 100, "step": 1}),
+                "input_count": ("INT", {"default": 2, "min": 1, "max": 100, "step": 1}),
                 "key_1": ("STRING", {"default": ""}),
                 "key_2": ("STRING", {"default": ""}),
             },
@@ -32,15 +32,15 @@ class JSONBuilder:
 Build JSON from key-value pairs.
 - Keys are manual text inputs
 - Values are connected from upstream nodes
-- Adjust **inputcount** and click Update inputs to add more pairs
+- Adjust **input_count** and click Update inputs to add more pairs
 """
 
-    def build(self, inputcount: int, **kwargs) -> Tuple[str]:
+    def build(self, input_count: int, **kwargs) -> Tuple[str]:
         """Build JSON from key-value pairs."""
         result = {}
         
         # Add key-value pairs
-        for i in range(1, inputcount + 1):
+        for i in range(1, input_count + 1):
             key = kwargs.get(f"key_{i}", "")
             value = kwargs.get(f"value_{i}", "")
             

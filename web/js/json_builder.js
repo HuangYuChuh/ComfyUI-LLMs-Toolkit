@@ -5,21 +5,21 @@ app.registerExtension({
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         if (nodeData.name === "JSONBuilder") {
             nodeType.prototype.onNodeCreated = function () {
-                this.addWidget("button", "Update inputs", null, () => {
-                    const inputcountWidget = this.widgets.find(w => w.name === "inputcount");
-                    if (!inputcountWidget) return;
+                // Find inputcount widget and add button right after it
+                const inputCountWidget = this.widgets.find(w => w.name === "input_count");
+                const inputCountIdx = this.widgets.indexOf(inputCountWidget);
 
-                    const target_count = inputcountWidget.value;
+                // Insert button after input_count widget
+                const button = this.addWidget("button", "Update inputs", null, () => {
+                    const inputCountWidget = this.widgets.find(w => w.name === "input_count");
+                    if (!inputCountWidget) return;
+
+                    const target_count = inputCountWidget.value;
 
                     // Count current key widgets (they are in widgets, not inputs)
                     const current_keys = this.widgets.filter(w =>
                         w.name && w.name.startsWith("key_")
                     ).length;
-
-                    // Count current value inputs
-                    const current_values = this.inputs ? this.inputs.filter(input =>
-                        input.name && input.name.startsWith("value_")
-                    ).length : 0;
 
                     if (target_count === current_keys) return; // already correct
 
@@ -58,6 +58,15 @@ app.registerExtension({
                     // Resize node to fit new widgets
                     this.setSize(this.computeSize());
                 });
+
+                // Move button to be right after input_count
+                if (inputCountIdx !== -1) {
+                    const buttonIdx = this.widgets.indexOf(button);
+                    if (buttonIdx !== -1 && buttonIdx !== inputCountIdx + 1) {
+                        this.widgets.splice(buttonIdx, 1);
+                        this.widgets.splice(inputCountIdx + 1, 0, button);
+                    }
+                }
             };
         }
     }
