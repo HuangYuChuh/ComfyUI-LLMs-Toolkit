@@ -9,11 +9,11 @@ class JSONBuilderBasic:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "key_1": ("STRING", {"default": "key1"}),
-                "key_2": ("STRING", {"default": "key2"}),
-                "key_3": ("STRING", {"default": "key3"}),
-                "key_4": ("STRING", {"default": "key4"}),
-                "key_5": ("STRING", {"default": "key5"}),
+                "key_1": ("STRING", {"default": ""}),
+                "key_2": ("STRING", {"default": ""}),
+                "key_3": ("STRING", {"default": ""}),
+                "key_4": ("STRING", {"default": ""}),
+                "key_5": ("STRING", {"default": ""}),
             },
             "optional": {
                 "value_1": ("STRING", {"default": "", "forceInput": True}),
@@ -55,16 +55,16 @@ class JSONBuilderAdvanced:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "key_1": ("STRING", {"default": "key1"}),
-                "key_2": ("STRING", {"default": "key2"}),
-                "key_3": ("STRING", {"default": "key3"}),
-                "key_4": ("STRING", {"default": "key4"}),
-                "key_5": ("STRING", {"default": "key5"}),
-                "key_6": ("STRING", {"default": "key6"}),
-                "key_7": ("STRING", {"default": "key7"}),
-                "key_8": ("STRING", {"default": "key8"}),
-                "key_9": ("STRING", {"default": "key9"}),
-                "key_10": ("STRING", {"default": "key10"}),
+                "key_1": ("STRING", {"default": ""}),
+                "key_2": ("STRING", {"default": ""}),
+                "key_3": ("STRING", {"default": ""}),
+                "key_4": ("STRING", {"default": ""}),
+                "key_5": ("STRING", {"default": ""}),
+                "key_6": ("STRING", {"default": ""}),
+                "key_7": ("STRING", {"default": ""}),
+                "key_8": ("STRING", {"default": ""}),
+                "key_9": ("STRING", {"default": ""}),
+                "key_10": ("STRING", {"default": ""}),
             },
             "optional": {
                 "value_1": ("STRING", {"default": "", "forceInput": True}),
