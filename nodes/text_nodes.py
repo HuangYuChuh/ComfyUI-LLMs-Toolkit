@@ -56,7 +56,7 @@ class StringTemplate:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("string",)
     FUNCTION = "render"
-    CATEGORY = "🚦ComfyUI_LLMs_Toolkit/Text"
+    CATEGORY = "🚦ComfyUI_LLMs_Toolkit/JSON"
     DESCRIPTION = "Replaces variables in the template string with values from the input JSON variables (e.g. {name}). Missing variables are left as-is."
 
     def render(self, template: str, variables: str = "{}") -> Tuple[str]:
