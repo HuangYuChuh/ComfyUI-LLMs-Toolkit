@@ -1,9 +1,10 @@
-import asyncio
 import time
 import random
+import json as json_lib
+import urllib.request
+import urllib.error
 from typing import Optional, List, Dict, Tuple, Any
 from dataclasses import dataclass
-from aiohttp import ClientSession, ClientError
 
 
 @dataclass
@@ -272,33 +273,114 @@ class OpenAICompatibleLoader:
         print(f"   out│ {preview}...")
         print(f"[LLMs_Toolkit] {time.strftime('%H:%M:%S')} ← {in_tok}/{out_tok}t ({elapsed_ms}ms)\n")
     
-    async def _async_api_call(
+    def _log_error(
+        self,
+        error: Exception,
+        provider: 'ProviderConfig',
+        model: str
+    ) -> None:
+        """Structured error logging with diagnostics and actionable hints"""
+        elapsed_ms = int((time.time() - self._request_start_time) * 1000)
+        ts = time.strftime('%H:%M:%S')
+        
+        # Classify error and extract details
+        error_str = str(error)
+        error_type = "UNKNOWN"
+        cause = error_str
+        hint = "检查终端完整日志获取更多信息"
+        
+        if "HTTP 401" in error_str or "invalid_api_key" in error_str or "Unauthorized" in error_str:
+            error_type = "AUTH"
+            cause = "API Key 无效或已过期"
+            hint = f"请检查 {provider.name} 的 API Key 是否正确配置"
+        elif "HTTP 429" in error_str or "rate_limit" in error_str:
+            error_type = "RATE_LIMIT"
+            cause = "请求频率超限"
+            hint = "请等待片刻后重试，或升级 API 套餐"
+        elif "HTTP 400" in error_str or "invalid_request" in error_str:
+            error_type = "BAD_REQUEST"
+            cause = "请求参数有误"
+            hint = f"请检查模型名称 '{model}' 是否正确"
+        elif "HTTP 404" in error_str or "model_not_found" in error_str:
+            error_type = "MODEL"
+            cause = f"模型 '{model}' 不存在"
+            hint = f"请确认 {provider.name} 支持该模型名称"
+        elif "HTTP 5" in error_str:
+            error_type = "SERVER"
+            cause = "API 服务端错误"
+            hint = f"{provider.name} 服务可能暂时不可用，请稍后重试"
+        elif "TimeoutError" in type(error).__name__ or "timed out" in error_str.lower():
+            error_type = "TIMEOUT"
+            cause = f"请求超时 ({elapsed_ms}ms)"
+            hint = "网络连接缓慢或 API 响应时间过长"
+        elif "URLError" in type(error).__name__ or "connection" in error_str.lower():
+            error_type = "NETWORK"
+            cause = "无法连接到 API 服务器"
+            hint = "请检查网络连接和代理设置"
+        elif "missing 'choices'" in error_str:
+            error_type = "RESPONSE"
+            cause = "API 返回了非标准格式"
+            hint = "API 可能返回了错误信息而非正常结果"
+        
+        # Parse API error message if present
+        api_message = ""
+        if '"message"' in error_str:
+            try:
+                # Try to extract JSON error message
+                import re
+                msg_match = re.search(r'"message"\s*:\s*"([^"]+)"', error_str)
+                if msg_match:
+                    api_message = msg_match.group(1)
+            except Exception:
+                pass
+        
+        # Print structured error block
+        print(f"")
+        print(f"[LLMs_Toolkit] {ts} ✗ {error_type} ERROR ({elapsed_ms}ms)")
+        print(f"   ┌──────────────────────────────────────────────")
+        print(f"   │ 服务商  {provider.name}")
+        print(f"   │ 模型    {model or 'default'}")
+        print(f"   │ 原因    {cause}")
+        if api_message:
+            print(f"   │ API消息 {api_message[:120]}")
+        print(f"   │ 建议    {hint}")
+        print(f"   └──────────────────────────────────────────────")
+        print(f"")
+    
+    def _sync_api_call(
         self,
         endpoint: str,
         payload: Dict[str, Any],
         api_key: str
     ) -> Tuple[str, Dict[str, Any]]:
-        """Core async API call with proper error handling"""
-        async with ClientSession() as session:
-            try:
-                async with session.post(
-                    f"{endpoint}/chat/completions",
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {api_key}"
-                    },
-                    json=payload,
-                    timeout=60
-                ) as response:
-                    response.raise_for_status()
-                    data = await response.json()
-                    
-                    content = data["choices"][0]["message"]["content"]
-                    
-                    return content, data
-                    
-            except ClientError as e:
-                raise Exception(f"API request failed: {str(e)}")
+        """Synchronous API call using urllib (avoids asyncio event loop conflicts)"""
+        url = f"{endpoint}/chat/completions"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+        
+        data_bytes = json_lib.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data_bytes, headers=headers, method="POST")
+        
+        try:
+            with urllib.request.urlopen(req, timeout=120) as response:
+                response_body = response.read().decode("utf-8")
+                data = json_lib.loads(response_body)
+                
+                if "choices" not in data or len(data["choices"]) == 0:
+                    raise ValueError(f"API response missing 'choices'. Full response: {data}")
+                
+                content = data["choices"][0]["message"]["content"]
+                return content, data
+                
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8", errors="replace")
+            raise Exception(f"HTTP {e.code} | {error_body}")
+        except urllib.error.URLError as e:
+            raise Exception(f"URLError | {str(e.reason)}")
+        except TimeoutError:
+            raise Exception(f"TimeoutError | 请求超过 120 秒未响应")
     
     def _build_payload(
         self,
@@ -386,9 +468,9 @@ class OpenAICompatibleLoader:
         )
         
         try:
-            # Use asyncio.run() for clean event loop management
-            response_content, data = asyncio.run(
-                self._async_api_call(provider.base_url, payload, api_key)
+            # Synchronous call to avoid asyncio event loop conflicts
+            response_content, data = self._sync_api_call(
+                provider.base_url, payload, api_key
             )
             
             # Extract actual token usage from response
@@ -400,7 +482,7 @@ class OpenAICompatibleLoader:
             return (response_content, int(input_tokens), int(output_tokens))
             
         except Exception as e:
-            print(f"[LLMs_Toolkit] ✗ {str(e)}")
+            self._log_error(e, provider, model)
             raise
 
 
