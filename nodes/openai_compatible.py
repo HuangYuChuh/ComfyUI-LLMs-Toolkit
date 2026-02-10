@@ -3,7 +3,7 @@ import random
 import json as json_lib
 import urllib.request
 import urllib.error
-from typing import Optional, List, Dict, Tuple, Any
+from typing import Optional, List, Dict, Tuple, Any, Union
 from dataclasses import dataclass
 
 
@@ -75,17 +75,25 @@ class MessageBuilder:
     """Builds chat messages with support for multimodal content"""
     
     @staticmethod
-    def build_content(prompt: str, image_url: Optional[str] = None) -> List[Dict[str, Any]]:
+    def build_content(prompt: str, image_url: Optional[Union[str, List[str]]] = None) -> List[Dict[str, Any]]:
         """Build content array for user message"""
         content = []
         
         if image_url:
-            if not image_url.startswith("data:image"):
-                raise ValueError("Image must be a valid base64 data URL")
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": image_url}
-            })
+            if isinstance(image_url, list):
+                 for url in image_url:
+                     if isinstance(url, str) and url.startswith("data:image"):
+                         content.append({
+                             "type": "image_url",
+                             "image_url": {"url": url}
+                         })
+            elif isinstance(image_url, str):
+                if not image_url.startswith("data:image"):
+                    raise ValueError("Image must be a valid base64 data URL")
+                content.append({
+                    "type": "image_url",
+                    "image_url": {"url": image_url}
+                })
         
         if prompt.strip():
             content.append({
@@ -148,7 +156,7 @@ class TokenEstimator:
     def estimate_input_tokens(
         prompt: str,
         system_prompt: Optional[str] = None,
-        image_url: Optional[str] = None
+        image_url: Optional[Union[str, List[str]]] = None
     ) -> int:
         """Simple character-based token estimation"""
         tokens = len(prompt)
@@ -157,8 +165,13 @@ class TokenEstimator:
             tokens += len(system_prompt)
         
         if image_url:
-            # Rough estimate: base64 image ~= length/1000 tokens
-            tokens += len(image_url) // 1000
+            if isinstance(image_url, list):
+                for url in image_url:
+                    if isinstance(url, str):
+                         tokens += len(url) // 1000
+            elif isinstance(image_url, str):
+                # Rough estimate: base64 image ~= length/1000 tokens
+                tokens += len(image_url) // 1000
         
         return tokens
 
@@ -227,7 +240,7 @@ class OpenAICompatibleLoader:
         model: str,
         system_prompt: Optional[str],
         prompt: str,
-        image_attached: bool
+        image_input: Optional[Union[str, List[str]]]
     ) -> None:
         """Geek-style request logging with timing"""
         self._request_start_time = time.time()
@@ -237,8 +250,14 @@ class OpenAICompatibleLoader:
         flags = []
         if system_prompt:
             flags.append('sys')
-        if image_attached:
-            flags.append('img')
+            
+        img_count = 0
+        if image_input:
+            if isinstance(image_input, list):
+                img_count = len(image_input)
+            else:
+                img_count = 1
+            flags.append(f'img(x{img_count})')
         
         flag_str = f"[{' '.join(flags)}]" if flags else ""
         
@@ -435,6 +454,18 @@ class OpenAICompatibleLoader:
     ) -> Tuple[str, int, int]:
         """Main generation entry point"""
         
+        # Handle prep_img: parse JSON list if applicable
+        image_input = None
+        if prep_img:
+            if prep_img.strip().startswith("["):
+                try:
+                    image_input = json_lib.loads(prep_img)
+                except Exception:
+                    # Fallback: treat as single string
+                    image_input = prep_img
+            else:
+                image_input = prep_img
+        
         # Get provider configuration
         provider = ProviderRegistry.get_provider(base_url)
         
@@ -444,11 +475,11 @@ class OpenAICompatibleLoader:
             model=model,
             system_prompt=system_prompt,
             prompt=prompt,
-            image_attached=bool(prep_img)
+            image_input=image_input
         )
         
         # Build message content
-        content = MessageBuilder.build_content(prompt, prep_img)
+        content = MessageBuilder.build_content(prompt, image_input)
         
         # Build messages with system prompt
         messages = MessageBuilder.build_messages(content, system_prompt)
@@ -464,7 +495,7 @@ class OpenAICompatibleLoader:
         
         # Estimate input tokens
         input_tokens = TokenEstimator.estimate_input_tokens(
-            prompt, system_prompt, prep_img
+            prompt, system_prompt, image_input
         )
         
         try:
