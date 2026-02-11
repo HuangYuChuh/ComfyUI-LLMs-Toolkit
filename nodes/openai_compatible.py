@@ -188,20 +188,15 @@ class OpenAICompatibleLoader:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "base_url": ("STRING", {"default": "Qwen/通义千问"}),
-                "model": ("STRING", {
-                    "default": "",
-                    "label": "模型名称",
-                    "allow_edit": True
-                }),
-            },
-            "optional": {
-                "prep_img": ("STRING", {"default": "", "forceInput": True}),
+                "llm_config": ("LLM_CONFIG",),
                 "system_prompt": ("STRING", {
                     "default": "你是一个AI大模型",
                     "multiline": True
                 }),
-                "prompt": ("STRING", {"multiline": True}),
+                "prompt": ("STRING", {"multiline": True, "default": ""}),
+            },
+            "optional": {
+                "prep_img": ("STRING", {"default": "", "forceInput": True}),
                 "temperature": ("FLOAT", {
                     "default": 0.7,
                     "min": 0.0,
@@ -220,8 +215,7 @@ class OpenAICompatibleLoader:
                     "default": 0,
                     "min": 0,
                     "max": 0xffffffffffffffff
-                }),
-                "api_key": ("STRING", {"default": ""})
+                })
             }
         }
     
@@ -441,19 +435,26 @@ class OpenAICompatibleLoader:
     
     def generate(
         self,
-        base_url: str,
-        api_key: str,
+        llm_config: Dict[str, Any],
         prompt: str,
-        model: str,
-        temperature: float,
-        max_tokens: int,
+        temperature: float = 0.7,
+        max_tokens: int = 512,
         system_prompt: Optional[str] = None,
         prep_img: Optional[str] = None,
         enable_memory: bool = False,
         seed: int = 0
     ) -> Tuple[str, int, int]:
         """Main generation entry point"""
-        
+
+        # Extract config parameters
+        base_url = llm_config.get("base_url", "")
+        model = llm_config.get("model", "")
+        api_key = llm_config.get("api_key", "")
+        provider = llm_config.get("provider", "Custom")
+
+        # Log using config
+        print(f"[LLMs_Toolkit] 使用配置: {provider} / {model}")
+
         # Handle prep_img: parse JSON list if applicable
         image_input = None
         if prep_img:

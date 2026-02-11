@@ -17,7 +17,7 @@ class LLM_Loader:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "base_url": ([
+                "provider": ([
                     "Qwen/通义千问",
                     "DeepSeek/深度求索",
                     "DouBao/豆包",
@@ -27,22 +27,46 @@ class LLM_Loader:
                     "Baichuan/百川",
                     "MiniMax/MiniMax",
                     "StepFun/阶跃星辰",
-                    "SenseChat/日日新"
-                ], {}),
+                    "SenseChat/日日新",
+                    "Custom/自定义"
+                ], {
+                    "default": "Qwen/通义千问"
+                }),
                 "model": ("STRING", {
                     "default": "",
-                    "label": "模型名称",
-                    "allow_edit": True
+                    "label": "模型名称"
+                }),
+                "api_key": ("STRING", {
+                    "default": "",
+                    "label": "API Key"
+                }),
+            },
+            "optional": {
+                "custom_base_url": ("STRING", {
+                    "default": "",
+                    "label": "自定义 Base URL",
+                    "placeholder": "https://api.example.com/v1"
                 }),
             }
         }
 
-    RETURN_TYPES = ("STRING", "STRING")
-    RETURN_NAMES = ("base_url", "model")
+    @classmethod
+    def VALIDATE_INPUTS(cls, provider, model, api_key, custom_base_url=""):
+        """Validate inputs"""
+        if provider == "Custom/自定义" and (not custom_base_url or not custom_base_url.strip()):
+            return "选择自定义时,必须填写自定义 Base URL"
+        if not model or not model.strip():
+            return "Model name cannot be empty"
+        if not api_key or not api_key.strip():
+            return "API Key cannot be empty"
+        return True
+
+    RETURN_TYPES = ("LLM_CONFIG",)
+    RETURN_NAMES = ("llm_config",)
     FUNCTION = "generate"
     CATEGORY = "🚦ComfyUI_LLMs_Toolkit/Loader"
 
-    def generate(self, base_url: str, model: str):
+    def generate(self, provider: str, model: str, api_key: str, custom_base_url: str = ""):
         # 定义 base_url 映射表
         base_url_mapping = {
             "Qwen/通义千问": "https://dashscope.aliyuncs.com/compatible-mode/v1",
@@ -56,12 +80,24 @@ class LLM_Loader:
             "StepFun/阶跃星辰": "https://api.stepfun.com/v1",
             "SenseChat/日日新": "https://api.sensenova.cn/compatible-mode/v1"
         }
-        
+
         # 获取实际的 base_url
-        actual_base_url = base_url_mapping.get(base_url, base_url)
-        
-        # 返回 base_url 和 model 参数
-        return (actual_base_url, model)
+        if provider == "Custom/自定义":
+            actual_base_url = custom_base_url.strip()
+            print(f"[LLMs_Toolkit] 配置加载: Custom URL ({actual_base_url}) / {model}")
+        else:
+            actual_base_url = base_url_mapping.get(provider, provider)
+            print(f"[LLMs_Toolkit] 配置加载: {provider} / {model}")
+
+        # 返回配置对象
+        config = {
+            "provider": provider,
+            "base_url": actual_base_url,
+            "model": model,
+            "api_key": api_key
+        }
+
+        return (config,)
 
 # 注册节点
 NODE_CLASS_MAPPINGS = {"LLM_Loader": LLM_Loader}
