@@ -290,50 +290,88 @@ class OpenAICompatibleLoader:
         self,
         error: Exception,
         provider: 'ProviderConfig',
-        model: str
+        model: str,
+        request_size_mb: float = 0.0
     ) -> None:
         """Structured error logging with diagnostics and actionable hints"""
         elapsed_ms = int((time.time() - self._request_start_time) * 1000)
         ts = time.strftime('%H:%M:%S')
-        
+
         # Classify error and extract details
         error_str = str(error)
         error_type = "UNKNOWN"
         cause = error_str
         hint = "检查终端完整日志获取更多信息"
+        details = []  # Additional diagnostic details
         
         if "HTTP 401" in error_str or "invalid_api_key" in error_str or "Unauthorized" in error_str:
             error_type = "AUTH"
             cause = "API Key 无效或已过期"
             hint = f"请检查 {provider.name} 的 API Key 是否正确配置"
+            details.append("验证失败,请确认 API Key 有效且未过期")
+
         elif "HTTP 429" in error_str or "rate_limit" in error_str:
             error_type = "RATE_LIMIT"
             cause = "请求频率超限"
             hint = "请等待片刻后重试，或升级 API 套餐"
+            details.append("触发了速率限制,建议降低请求频率")
+
+        elif "HTTP 413" in error_str or "Payload Too Large" in error_str:
+            error_type = "PAYLOAD_TOO_LARGE"
+            cause = f"请求体过大 ({request_size_mb:.2f}MB)"
+            hint = "请压缩图片或减少输入内容"
+            details.append("服务器拒绝接收过大的请求")
+            details.append("建议: 压缩图片到 1024x1024 以下,或降低图片质量")
+
         elif "HTTP 400" in error_str or "invalid_request" in error_str:
             error_type = "BAD_REQUEST"
             cause = "请求参数有误"
             hint = f"请检查模型名称 '{model}' 是否正确"
+            if request_size_mb > 10:
+                details.append(f"请求体较大 ({request_size_mb:.2f}MB),可能超过服务器限制")
+            details.append("检查所有参数是否符合 API 要求")
+
         elif "HTTP 404" in error_str or "model_not_found" in error_str:
             error_type = "MODEL"
             cause = f"模型 '{model}' 不存在"
             hint = f"请确认 {provider.name} 支持该模型名称"
+            details.append("模型名称可能拼写错误或该服务商不支持此模型")
+
         elif "HTTP 5" in error_str:
             error_type = "SERVER"
             cause = "API 服务端错误"
             hint = f"{provider.name} 服务可能暂时不可用，请稍后重试"
+            details.append("这是服务器端的问题,不是客户端配置错误")
+
+        elif "Broken pipe" in error_str:
+            error_type = "BROKEN_PIPE"
+            cause = "连接在传输数据时被服务器关闭"
+            hint = "可能是请求体过大或服务器超时"
+            if request_size_mb > 5:
+                details.append(f"请求体很大 ({request_size_mb:.2f}MB),建议压缩图片")
+            if elapsed_ms > 60000:
+                details.append(f"传输时间过长 ({elapsed_ms/1000:.1f}秒),可能触发服务器超时")
+            details.append("建议: 1) 压缩图片 2) 检查网络上传速度 3) 使用更快的网络")
+
         elif "TimeoutError" in type(error).__name__ or "timed out" in error_str.lower():
             error_type = "TIMEOUT"
-            cause = f"请求超时 ({elapsed_ms}ms)"
+            cause = f"请求超时 ({elapsed_ms/1000:.1f}秒)"
             hint = "网络连接缓慢或 API 响应时间过长"
+            if request_size_mb > 5:
+                details.append(f"请求体较大 ({request_size_mb:.2f}MB),传输需要更长时间")
+            details.append("建议: 检查网络连接速度")
+
         elif "URLError" in type(error).__name__ or "connection" in error_str.lower():
             error_type = "NETWORK"
             cause = "无法连接到 API 服务器"
             hint = "请检查网络连接和代理设置"
+            details.append("可能原因: 1) 网络断开 2) 防火墙阻止 3) 代理配置错误")
+
         elif "missing 'choices'" in error_str:
             error_type = "RESPONSE"
             cause = "API 返回了非标准格式"
             hint = "API 可能返回了错误信息而非正常结果"
+            details.append("服务器返回的响应格式不符合预期")
         
         # Parse API error message if present
         api_message = ""
@@ -353,10 +391,20 @@ class OpenAICompatibleLoader:
         print(f"   ┌──────────────────────────────────────────────")
         print(f"   │ 服务商  {provider.name}")
         print(f"   │ 模型    {model or 'default'}")
+        if request_size_mb > 0:
+            print(f"   │ 请求大小 {request_size_mb:.2f} MB")
         print(f"   │ 原因    {cause}")
         if api_message:
             print(f"   │ API消息 {api_message[:120]}")
         print(f"   │ 建议    {hint}")
+
+        # Print additional diagnostic details
+        if details:
+            print(f"   │")
+            print(f"   │ 详细诊断:")
+            for i, detail in enumerate(details, 1):
+                print(f"   │   {i}. {detail}")
+
         print(f"   └──────────────────────────────────────────────")
         print(f"")
     
@@ -364,7 +412,8 @@ class OpenAICompatibleLoader:
         self,
         endpoint: str,
         payload: Dict[str, Any],
-        api_key: str
+        api_key: str,
+        max_retries: int = 2
     ) -> Tuple[str, Dict[str, Any]]:
         """Synchronous API call using urllib (avoids asyncio event loop conflicts)"""
         url = f"{endpoint}/chat/completions"
@@ -372,28 +421,52 @@ class OpenAICompatibleLoader:
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}"
         }
-        
+
         data_bytes = json_lib.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(url, data=data_bytes, headers=headers, method="POST")
-        
-        try:
-            with urllib.request.urlopen(req, timeout=120) as response:
-                response_body = response.read().decode("utf-8")
-                data = json_lib.loads(response_body)
-                
-                if "choices" not in data or len(data["choices"]) == 0:
-                    raise ValueError(f"API response missing 'choices'. Full response: {data}")
-                
-                content = data["choices"][0]["message"]["content"]
-                return content, data
-                
-        except urllib.error.HTTPError as e:
-            error_body = e.read().decode("utf-8", errors="replace")
-            raise Exception(f"HTTP {e.code} | {error_body}")
-        except urllib.error.URLError as e:
-            raise Exception(f"URLError | {str(e.reason)}")
-        except TimeoutError:
-            raise Exception(f"TimeoutError | 请求超过 120 秒未响应")
+
+        # Log request size for debugging
+        data_size_mb = len(data_bytes) / (1024 * 1024)
+        if data_size_mb > 1:
+            print(f"[LLMs_Toolkit] 请求体大小: {data_size_mb:.2f} MB")
+
+        last_error = None
+        for attempt in range(max_retries + 1):
+            try:
+                req = urllib.request.Request(url, data=data_bytes, headers=headers, method="POST")
+
+                with urllib.request.urlopen(req, timeout=180) as response:
+                    response_body = response.read().decode("utf-8")
+                    data = json_lib.loads(response_body)
+
+                    if "choices" not in data or len(data["choices"]) == 0:
+                        raise ValueError(f"API response missing 'choices'. Full response: {data}")
+
+                    content = data["choices"][0]["message"]["content"]
+                    return content, data
+
+            except urllib.error.HTTPError as e:
+                error_body = e.read().decode("utf-8", errors="replace")
+                raise Exception(f"HTTP {e.code} | {error_body}")
+            except urllib.error.URLError as e:
+                last_error = e
+                error_msg = str(e.reason)
+
+                # Check if it's a broken pipe or connection error
+                if "Broken pipe" in error_msg or "Connection" in error_msg:
+                    if attempt < max_retries:
+                        print(f"[LLMs_Toolkit] 连接错误,重试 {attempt + 1}/{max_retries}...")
+                        time.sleep(2 ** attempt)  # Exponential backoff
+                        continue
+
+                raise Exception(f"URLError | {error_msg}")
+            except TimeoutError:
+                raise Exception(f"TimeoutError | 请求超过 180 秒未响应")
+
+        # If all retries failed
+        if last_error:
+            raise Exception(f"URLError | {str(last_error.reason)} (重试 {max_retries} 次后仍失败)")
+
+        raise Exception("Unknown error occurred")
     
     def _build_payload(
         self,
@@ -493,28 +566,32 @@ class OpenAICompatibleLoader:
         
         # Build request payload
         payload = self._build_payload(model, messages, temperature, max_tokens)
-        
+
+        # Calculate request size for error logging
+        payload_bytes = json_lib.dumps(payload).encode("utf-8")
+        request_size_mb = len(payload_bytes) / (1024 * 1024)
+
         # Estimate input tokens
         input_tokens = TokenEstimator.estimate_input_tokens(
             prompt, system_prompt, image_input
         )
-        
+
         try:
             # Synchronous call to avoid asyncio event loop conflicts
             response_content, data = self._sync_api_call(
                 provider.base_url, payload, api_key
             )
-            
+
             # Extract actual token usage from response
             output_tokens = data.get("usage", {}).get("completion_tokens", 0)
-            
+
             # Log completion
             self._log_request_complete(response_content, input_tokens, output_tokens)
-            
+
             return (response_content, int(input_tokens), int(output_tokens))
-            
+
         except Exception as e:
-            self._log_error(e, provider, model)
+            self._log_error(e, provider, model, request_size_mb)
             raise
 
 
