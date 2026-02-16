@@ -4,154 +4,234 @@
 
 **Language / 语言切换**
 
-[![English](https://img.shields.io/badge/README-English-blue?style=for-the-badge)](README.md)
-[![简体中文](https://img.shields.io/badge/README-简体中文-red?style=for-the-badge)](README_CN.md)
+[![English](https://img.shields.io/badge/README-English-blue?style=for-the-badge)](readme_en.md)
+[![简体中文](https://img.shields.io/badge/README-简体中文-red?style=for-the-badge)](../README.md)
 
 ---
 
 [![GitHub Stars](https://img.shields.io/github/stars/HuangYuChuh/ComfyUI-LLMs-Toolkit?style=flat-square&logo=github&color=yellow)](https://github.com/HuangYuChuh/ComfyUI-LLMs-Toolkit/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/HuangYuChuh/ComfyUI-LLMs-Toolkit?style=flat-square&logo=github&color=green)](https://github.com/HuangYuChuh/ComfyUI-LLMs-Toolkit/network)
 [![GitHub Issues](https://img.shields.io/github/issues/HuangYuChuh/ComfyUI-LLMs-Toolkit?style=flat-square&logo=github&color=red)](https://github.com/HuangYuChuh/ComfyUI-LLMs-Toolkit/issues)
-[![License](https://img.shields.io/github/license/HuangYuChuh/ComfyUI-LLMs-Toolkit?style=flat-square&color=blue)](LICENSE)
+[![License](https://img.shields.io/github/license/HuangYuChuh/ComfyUI-LLMs-Toolkit?style=flat-square&color=blue)](../LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/HuangYuChuh/ComfyUI-LLMs-Toolkit?style=flat-square&color=orange)](https://github.com/HuangYuChuh/ComfyUI-LLMs-Toolkit/commits)
 
-**A Lightweight LLM Integration Suite for ComfyUI**
+**Inject powerful Large Language Models into your ComfyUI workflows!**
+
+*A professional-grade ComfyUI custom node suite supporting world-leading Large Language Models*
 
 </div>
 
 ---
 
-## 📖 Introduction
+## Project Overview
 
-ComfyUI-LLMs-Toolkit is a streamlined extension for ComfyUI that enables seamless integration with major Large Language Models (LLMs) like GPT-4o, Claude 3.5, DeepSeek, and Qwen via API calls. No local GPU resources required.
+ComfyUI-LLMs-Toolkit is a high-performance ComfyUI extension designed for AI creators. Through a lightweight API-driven approach, you can easily integrate world-class Large Language Models like DeepSeek, Qwen, GPT, etc., even with limited computational resources, democratizing AI creation.
 
-### ✨ Key Features
+### Why Choose Us?
 
-- **Zero Hardware Requirement** — Runs purely on APIs, no local GPU memory usage.
-- **Multi-Model Support** — Integrated with top-tier providers (OpenAI, Anthropic, DeepSeek, Alibaba, etc.).
-- **Secure & Flexible** — Environment variable-based configuration for safety and convenience.
-- **Plug & Play** — One-click installation, ready to use in minutes.
-
----
-
-## 🤖 Supported Models
-
-### International Models
-
-| Model | Provider | Key Strengths | Config Prefix |
-|-------|----------|---------------|---------------|
-| GPT-4o | OpenAI | Universal Intelligence, Multimodal | `OPENAI_` |
-| Claude-3.5 | Anthropic | Coding, Nuanced Writing, Long Context | `CLAUDE_` |
-| Gemini-Pro | Google | Multilingual, Search Grounding | `GEMINI_` |
-
-### Domestic Models (CN)
-
-| Model | Provider | Key Strengths | Config Prefix |
-|-------|----------|---------------|---------------|
-| DeepSeek-V3 | DeepSeek | Math, Coding, Cost-Effective | `DEEPSEEK_` |
-| Qwen-Max | Alibaba | Multimodal, Chinese Proficiency | `QWEN_` |
-| GLM-4 | Zhipu AI | Reasoning, Knowledge Retrieval | `GLM_` |
-| Doubao-Pro | ByteDance | Creative Writing, Chat | `DOUBAO_` |
-| Spark-Max | iFLYTEK | Language Understanding | `SPARK_` |
-| Moonshot-V1 | Moonshot | Long Context Understanding | `MOONSHOT_` |
+- **Zero Hardware Barrier**: No high-end GPU required, enjoy cutting-edge AI capabilities with just APIs
+- **Global Model Support**: Integrated mainstream LLMs worldwide, one-stop solution
+- **High-Performance Architecture**: Optimized concurrent processing, dramatically improving workflow efficiency
+- **Developer Friendly**: Environment variable configuration, Docker support, developer-first approach
 
 ---
 
-## 🚀 Quick Start
+## Core Features
 
-### Prerequisites
+### Powerful LLM Ecosystem
 
-- Python >= 3.8
-- Latest ComfyUI
-- >= 4GB RAM
-- Stable Internet Connection
+| Category | Supported Models | Key Capabilities |
+|----------|------------------|------------------|
+| **Chinese Leaders** | DeepSeek-V3, Qwen-Max, GLM-4 | Chinese understanding, code generation, mathematical reasoning |
+| **International Giants** | GPT-4, Claude-3, Gemini | Multimodal processing, creative writing, complex reasoning |
+| **Professional Vertical** | Doubao, Spark, Moonshot | Dialogue generation, long text, role-playing |
 
-### Installation
+### Technical Highlights
 
-#### Option 1: ComfyUI Manager (Recommended)
+- **Lightning Deployment**: One-click installation, get started in 5 minutes
+- **Concurrency Optimization**: Multi-threading processing, supports batch requests
+- **Security First**: Environment variable configuration, secure API key management
+- **Hot Reload**: Dynamic configuration updates, no need to restart ComfyUI
+- **Smart Caching**: Response caching mechanism, reducing API call costs
+- **Containerized**: Docker support, consistent deployment environment
 
-1. Open **Manager** in ComfyUI.
-2. Search for `ComfyUI-LLMs-Toolkit`.
-3. Install and restart ComfyUI.
+---
 
-#### Option 2: Manual Installation
+## Quick Start
+
+### System Requirements
+
+- **Python**: `>= 3.8`
+- **ComfyUI**: Latest version
+- **Memory**: `>= 4GB RAM`
+- **Network**: Stable internet connection
+
+### Lightning Installation
 
 ```bash
+# Method 1: Git Clone (Recommended)
 cd ComfyUI/custom_nodes/
 git clone https://github.com/HuangYuChuh/ComfyUI-LLMs-Toolkit.git
 cd ComfyUI-LLMs-Toolkit
+
+# Install Dependencies
 pip install -r requirements.txt
 ```
 
-### Configuration
+```bash
+# Method 2: Docker Deployment
+docker pull your-dockerhub/comfyui-llms-toolkit:latest
+docker run -d --name comfyui-llms -p 8188:8188 your-dockerhub/comfyui-llms-toolkit
+```
 
-1. Copy the environment template:
+### Environment Configuration
+
+#### 1. Create Configuration File
 
 ```bash
+# Copy environment variable template
 cp config/env.example .env
 ```
 
-2. Edit `.env` and add your API keys:
+#### 2. Configure API Keys
 
-```ini
-# DeepSeek
+Edit the `.env` file and select the models you want to use:
+
+```bash
+# DeepSeek (Recommended for beginners)
 DEEPSEEK_API_KEY=sk-your_deepseek_key_here
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL_NAME=deepseek-chat
 
-# Qwen
+# Qwen (Chinese optimized)
 QWEN_API_KEY=your_qwen_key_here
 QWEN_BASE_URL=https://dashscope.aliyuncs.com/api/v1
 QWEN_MODEL_NAME=qwen-max
 
-# OpenAI
+# OpenAI GPT (International standard)
 OPENAI_API_KEY=sk-your_openai_key_here
 OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_MODEL_NAME=gpt-4o-mini
+
+# More configurations see config/env.example
 ```
 
-### Getting API Keys
+#### 3. API Key Acquisition Guide
 
-- **DeepSeek**: [platform.deepseek.com](https://platform.deepseek.com/) (Free credits for new users)
-- **Qwen**: [dashscope.aliyun.com](https://dashscope.aliyun.com/)
-- **OpenAI**: [platform.openai.com](https://platform.openai.com/)
-- **Zhipu AI**: [open.bigmodel.cn](https://open.bigmodel.cn/)
+| Provider | Get Address | Free Credits | Rating |
+|-------------|----------------|-----------------|-----------|
+| **DeepSeek** | [platform.deepseek.com](https://platform.deepseek.com/) | ¥500 free credits | ⭐⭐⭐⭐⭐ |
+| **Qwen** | [dashscope.aliyun.com](https://dashscope.aliyun.com/) | 1M tokens/month | ⭐⭐⭐⭐ |
+| **OpenAI** | [platform.openai.com](https://platform.openai.com/) | $5 trial credits | ⭐⭐⭐⭐⭐ |
+| **GLM** | [open.bigmodel.cn](https://open.bigmodel.cn/) | 5M tokens/month | ⭐⭐⭐⭐ |
 
-### Usage
+### First Run
 
-1. Restart ComfyUI.
-2. Right-click > **Add Node** > **LLMs Toolkit**.
-3. Select your desired node, configure, and connect!
+1. **Restart ComfyUI**:
+   ```bash
+   # Restart ComfyUI to load new nodes
+   cd /path/to/ComfyUI
+   python main.py
+   ```
+
+2. **Find Nodes**:
+   - Right-click in ComfyUI interface
+   - Navigate to `Add Node` -> `LLMs Toolkit`
+   - Select the node type you need
+
+3. **Start Creating**:
+   - Drag in LLM nodes
+   - Configure model parameters
+   - Connect inputs and outputs
+   - Enjoy your AI creation journey!
 
 ---
 
-## ❓ FAQ
+## Supported Model Matrix
+
+### Chinese AI Champions
+
+| Model | Provider | Core Advantages | Price Level | Config Prefix |
+|-------|----------|-----------------|-------------|---------------|
+| **DeepSeek-V3** | DeepSeek | Mathematical reasoning, Code generation | Ultra-low | `DEEPSEEK_` |
+| **Qwen-Max** | Alibaba | Multimodal, Chinese optimization | Medium | `QWEN_` |
+| **GLM-4** | Zhipu AI | Logical reasoning, Knowledge Q&A | Low | `GLM_` |
+| **Doubao-Pro** | ByteDance | Dialogue generation, Creative writing | Medium | `DOUBAO_` |
+| **Spark-Max** | iFLYTEK | Language understanding, Text analysis | Low | `SPARK_` |
+| **Moonshot-V1** | Moonshot AI | Long text, Deep understanding | Medium | `MOONSHOT_` |
+
+### International AI Giants
+
+| Model | Provider | Core Advantages | Price Level | Config Prefix |
+|-------|----------|-----------------|-------------|---------------|
+| **GPT-4o** | OpenAI | General intelligence, Multimodal | High | `OPENAI_` |
+| **Claude-3.5** | Anthropic | Safe dialogue, Long text | High | `CLAUDE_` |
+| **Gemini-Pro** | Google | Search enhanced, Multilingual | Medium | `GEMINI_` |
+
+---
+
+## FAQ
 
 <details>
-<summary><strong>How do I get an API Key?</strong></summary>
+<summary><strong>Q: How to get API keys?</strong></summary>
 
-Most providers offer free tiers or trials:
-- **DeepSeek**: Generous initial credits.
-- **OpenAI**: $5 free credit for new accounts.
-- **Qwen**: High token limits for free tier.
+**A**: All major vendors provide free trial credits:
+- **DeepSeek**: Register and get ¥500 credits, suitable for beginners
+- **Qwen**: Large quota available after Alibaba Cloud account verification
+- **OpenAI**: New users get $5 free credits, requires international payment method
 
 </details>
 
 <details>
-<summary><strong>I'm getting connection errors.</strong></summary>
+<summary><strong>Q: Does it support local models?</strong></summary>
 
-Common fixes:
-1. Check your internet connection (and proxy/VPN if needed).
-2. Verify your API Key and `BASE_URL`.
-3. Check ComfyUI console logs for detailed error messages.
+**A**: Currently mainly supports API calls, local model support is on the development roadmap:
+- **v2.0**: Planned support for Ollama local models
+- **v2.1**: Support for GGUF format models
+- **v3.0**: Support for custom model fine-tuning
 
 </details>
+
+<details>
+<summary><strong>Q: What to do when encountering connection errors?</strong></summary>
+
+**A**: Common solutions:
+1. **Check network**: Ensure access to corresponding API services
+2. **Verify keys**: Confirm API keys are correct and have balance
+3. **Check configuration**: Confirm BASE_URL format is correct
+4. **View logs**: Check ComfyUI console output
+
+</details>
+
+---
+
+## Open Source License
+
+This project is licensed under **[GNU General Public License v2.0](../LICENSE)**.
+
+**This means:**
+- **Free to use**: Both personal and commercial use
+- **Free to modify**: You can modify the source code
+- **Free to distribute**: You can distribute original or modified versions
+- **Open source obligation**: Modified versions must be open source
 
 ---
 
 <div align="center">
 
-**If you find this project helpful, please give it a Star! ⭐️**
+### If this project helps you, please give us a Star!
+
+[![Star History Chart](https://api.star-history.com/svg?repos=HuangYuChuh/ComfyUI-LLMs-Toolkit&type=Date)](https://star-history.com/#HuangYuChuh/ComfyUI-LLMs-Toolkit&Date)
+
+**Contact Us**
 
 [![GitHub](https://img.shields.io/badge/GitHub-@HuangYuChuh-181717?style=flat-square&logo=github)](https://github.com/HuangYuChuh)
+[![Email](https://img.shields.io/badge/Email-Contact-red?style=flat-square&logo=gmail)](mailto:your-email@example.com)
+
+---
+
+**Made with love for the ComfyUI community**
+
+*Making AI creation simpler, making technology more humane*
 
 </div>
