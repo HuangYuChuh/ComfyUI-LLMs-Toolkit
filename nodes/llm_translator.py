@@ -63,6 +63,8 @@ class LLMTranslator:
         temperature: float = 0.3
     ) -> str:
         """调用LLM API - 核心通信逻辑"""
+        import ssl
+
         base_url = llm_config.get("base_url", "").rstrip("/")
         model = llm_config.get("model", "")
         api_key = llm_config.get("api_key", "")
@@ -80,27 +82,39 @@ class LLMTranslator:
             "max_tokens": 4096
         }
 
-        try:
-            req = urllib.request.Request(
-                url, 
-                data=json.dumps(payload).encode("utf-8"), 
-                headers=headers, 
-                method="POST"
-            )
-            
-            with urllib.request.urlopen(req, timeout=60) as response:
-                data = json.loads(response.read().decode("utf-8"))
-                
-                if "choices" not in data or not data["choices"]:
-                    raise ValueError("Empty response from API")
-                    
-                return data["choices"][0]["message"]["content"].strip()
+        ctx = ssl.create_default_context()
+        last_error = None
 
-        except urllib.error.HTTPError as e:
-            error_body = e.read().decode("utf-8", errors="ignore")
-            raise Exception(f"HTTP Error {e.code}: {error_body}")
-        except Exception as e:
-            raise Exception(f"Translation failed: {str(e)}")
+        for attempt in range(3):
+            try:
+                req = urllib.request.Request(
+                    url, 
+                    data=json.dumps(payload).encode("utf-8"), 
+                    headers=headers, 
+                    method="POST"
+                )
+                
+                with urllib.request.urlopen(req, timeout=60, context=ctx) as response:
+                    data = json.loads(response.read().decode("utf-8"))
+                    
+                    if "choices" not in data or not data["choices"]:
+                        raise ValueError("Empty response from API")
+                        
+                    return data["choices"][0]["message"]["content"].strip()
+
+            except urllib.error.HTTPError as e:
+                error_body = e.read().decode("utf-8", errors="ignore")
+                raise Exception(f"HTTP Error {e.code}: {error_body}")
+            except (ssl.SSLError, urllib.error.URLError, ConnectionError, TimeoutError) as e:
+                last_error = e
+                print(f"[LLMs_Toolkit] Translator attempt {attempt + 1}/3 failed: {e}")
+                import time
+                time.sleep(1)
+                continue
+            except Exception as e:
+                raise Exception(f"Translation failed: {str(e)}")
+
+        raise Exception(f"Translation failed after 3 attempts: {last_error}")
 
     def translate(
         self,

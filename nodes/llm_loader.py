@@ -12,6 +12,7 @@ _BASE_URL_MAPPING = {
     "MiniMax/MiniMax": "https://api.minimax.chat/v1",
     "StepFun/阶跃星辰": "https://api.stepfun.com/v1",
     "SenseChat/日日新": "https://api.sensenova.cn/compatible-mode/v1",
+    "iFlow/心流": "https://apis.iflow.cn/v1",
 }
 
 
@@ -35,6 +36,7 @@ class LLM_Loader:
                     "MiniMax/MiniMax",
                     "StepFun/阶跃星辰",
                     "SenseChat/日日新",
+                    "iFlow/心流",
                     "Custom/自定义"
                 ], {
                     "default": "Qwen/通义千问"
