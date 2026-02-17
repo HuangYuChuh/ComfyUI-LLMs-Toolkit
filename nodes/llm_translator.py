@@ -51,7 +51,7 @@ class LLMTranslator:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("translated_text",)
     FUNCTION = "translate"
-    CATEGORY = "🚦ComfyUI_LLMs_Toolkit/Translation"
+    CATEGORY = "🚦ComfyUI_LLMs_Toolkit/Utility"
 
     def __init__(self):
         pass
