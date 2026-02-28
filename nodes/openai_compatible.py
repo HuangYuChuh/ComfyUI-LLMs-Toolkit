@@ -256,13 +256,18 @@ class OpenAICompatibleLoader:
         messages = _build_messages(content, system_prompt, provider_name)
         messages = self._apply_memory(messages, enable_memory)
 
-        # ── Build payload (clean, no non-standard fields) ────────────
+        # ── Build payload (clean, standard fields) ────────────
         payload = {
             "model": model,
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
+        
+        # Inject seed if provided (OpenAI standard field) to control diversity
+        # Seed enables ComfyUI to bypass cache when changed (e.g., set to 'random')
+        if seed > 0:
+            payload["seed"] = seed
 
         # Calculate request size for diagnostics
         payload_bytes = json_lib.dumps(payload).encode("utf-8")
