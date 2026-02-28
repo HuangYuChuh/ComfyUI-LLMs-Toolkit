@@ -203,7 +203,7 @@ class OpenAICompatibleLoader:
                     "max": 2.0
                 }),
                 "max_tokens": ("INT", {
-                    "default": 512,
+                    "default": 2048,
                     "min": 1,
                     "max": 4096
                 }),
@@ -223,6 +223,7 @@ class OpenAICompatibleLoader:
     RETURN_NAMES = ("text", "input_tokens", "output_tokens")
     FUNCTION = "generate"
     CATEGORY = "🚦ComfyUI_LLMs_Toolkit/Generate"
+    OUTPUT_NODE = True
     
     def __init__(self):
         self._conversation_history: List[Dict[str, Any]] = []
@@ -419,7 +420,8 @@ class OpenAICompatibleLoader:
         url = f"{endpoint}/chat/completions"
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}"
+            "Authorization": f"Bearer {api_key}",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
 
         data_bytes = json_lib.dumps(payload).encode("utf-8")
@@ -511,7 +513,7 @@ class OpenAICompatibleLoader:
         llm_config: Dict[str, Any],
         prompt: str,
         temperature: float = 0.7,
-        max_tokens: int = 512,
+        max_tokens: int = 2048,
         system_prompt: Optional[str] = None,
         prep_img: Optional[str] = None,
         enable_memory: bool = False,
@@ -541,7 +543,7 @@ class OpenAICompatibleLoader:
                 image_input = prep_img
         
         # Get provider configuration
-        provider = ProviderRegistry.get_provider(base_url)
+        provider = ProviderRegistry.get_provider(provider_name)
         
         # Log request details
         self._log_request_start(
@@ -579,7 +581,7 @@ class OpenAICompatibleLoader:
         try:
             # Synchronous call to avoid asyncio event loop conflicts
             response_content, data = self._sync_api_call(
-                provider.base_url, payload, api_key
+                base_url, payload, api_key
             )
 
             # Extract actual token usage from response
