@@ -205,6 +205,25 @@ OPENAI_MODEL_NAME=gpt-4o-mini
 
 ---
 
+## 📅 Changelog / 更新日志
+
+### [1.1.0] - 2026-03-01
+
+#### ✨ Added
+- **DeepSeek Reasoning Support / DeepSeek 深度思考解析**: Supported extracting deep thinking processes (`reasoning_content`) from DeepSeek R1 models, exposing it to a dedicated `reasoning` output pin in the generic node.
+- **o1/o3 Model System Role Compatibility**: Integrated a downgrade workaround for strict 'o1/o3' models by spoofing an `assistant` acceptance response.
+
+#### 🛠 Changed
+- **Shared API Client Refactor / 统一核心请求逻辑**: Extracted HTTP request logic to `api_client.py` for smarter retrying equipped with Exponential Backoff & Jitter.
+- **Graceful Error Degradation / 优雅降级不崩盘**: The API node now outputs readable text error traces instead of throwing Python Exceptions, preventing ComfyUI workflows from halting abruptly.
+- **User-Agent Masquerade / 反爬指纹伪装**: Added browser-standard `User-Agent` headers to successfully bypass HTTP 403 (Cloudflare Error 1010) on proxy platforms.
+
+#### 🐛 Fixed
+- **Multi-turn Memory Fix / 修复多轮对话断忆**: Fixed `openai_compatible.py` to properly store `assistant` responses when `enable_memory` is toggled on.
+- **Node Parameter Deserialization Bug UI / 修复节点参数不对齐**: Switched from dynamic widgets to naive `<canvas>` element drawings to fix the notorious parameter shift bug caused by `token_usage_display`.
+
+---
+
 ## Open Source License
 
 This project is licensed under **[GNU General Public License v2.0](../LICENSE)**.

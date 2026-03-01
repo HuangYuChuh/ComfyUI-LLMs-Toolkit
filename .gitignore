@@ -36,6 +36,7 @@ Thumbs.db
 # Internal docs (private)
 CONTRIBUTING.md
 task_plan.md
+AI_CHANGELOG_GUIDELINES.md
 
 # Tests
 tests/
