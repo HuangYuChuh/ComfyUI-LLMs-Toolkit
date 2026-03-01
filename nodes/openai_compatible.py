@@ -283,6 +283,11 @@ class OpenAICompatibleLoader:
             output_tokens = usage.get("completion_tokens", 0)
 
             self._log_done(response_content, input_tokens, output_tokens, start)
+            
+            # Save assistant response to memory if enabled
+            if enable_memory:
+                self._conversation_history.append({"role": "assistant", "content": response_content})
+                
             return self._success(response_content, input_tokens, output_tokens)
 
         except Exception as e:
