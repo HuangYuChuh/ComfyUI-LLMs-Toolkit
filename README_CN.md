@@ -168,6 +168,9 @@ OPENAI_MODEL_NAME=gpt-4o-mini
 - **修复多轮对话断忆**: 修复了在勾选 `enable_memory` (开启记忆) 时，系统其实并没有存入 `assistant` 机器人历史回复的恶性 Bug。
 - **修复节点参数不对齐 UI**: 摒弃了动态 Widget 组件注入，改用原生的 `<canvas>` 元素直接在前景层重绘 Token 数据，一劳永逸地解决了恼人的节点参数反序列化偏移 Bug。
 
+#### 🗑 移除
+- **精简多余的 Token 引脚**: 永久移除了 `openai_compatible` 基础节点上的 `input_tokens` 和 `output_tokens` 输出引脚。由于目前节点的使用量数据已经可以通过画布原生 UI 优雅直观地展示，不再需要额外的连线占用空间。
+
 ---
 
 <div align="center">
