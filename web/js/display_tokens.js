@@ -19,18 +19,12 @@ app.registerExtension({
                 ctx.fillStyle = "rgba(160, 160, 160, 0.9)";
                 ctx.textAlign = "right";
 
-                // Draw below the output slots on the right side
-                let startY = 40;
-                if (this.outputs && this.outputs.length > 0) {
-                    startY = (this.outputs.length * 20) + 30; // estimate slot space
-                }
-
-                // Align to the bottom right area of the node
+                // Draw completely below the node to avoid overlapping with bottom widgets
                 const lines = this._llm_token_usage;
-                let drawY = Math.max(startY, this.size[1] - (lines.length * 16) - 10);
+                let drawY = this.size[1] + 16;
 
                 for (let i = 0; i < lines.length; i++) {
-                    ctx.fillText(lines[i], this.size[0] - 15, drawY + (i * 16));
+                    ctx.fillText(lines[i], this.size[0] - 10, drawY + (i * 16));
                 }
                 ctx.restore();
             }
