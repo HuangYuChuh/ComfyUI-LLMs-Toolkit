@@ -6,6 +6,7 @@ API calls are handled by the shared LLMClient (api_client.py).
 """
 
 import time
+import re
 import json as json_lib
 from typing import Optional, List, Dict, Tuple, Any, Union
 
@@ -256,6 +257,14 @@ class OpenAICompatibleLoader:
         messages = _build_messages(content, system_prompt, provider_name)
         messages = self._apply_memory(messages, enable_memory)
 
+        # ── o1/o3 System Role Downgrade (Compatibility) ──────────────
+        if re.search(r'o[1-3]', model):
+            for i, msg in enumerate(messages):
+                if msg["role"] == "system":
+                    messages[i] = {"role": "user", "content": msg["content"]}
+                    messages.insert(i + 1, {"role": "assistant", "content": "好的，我会按照你的指示来操作"})
+                    break
+
         # ── Build payload (clean, standard fields) ────────────
         payload = {
             "model": model,
@@ -276,6 +285,24 @@ class OpenAICompatibleLoader:
         try:
             client = LLMClient(base_url, api_key)
             response_content, data = client.chat(payload)
+
+            # Extract reasoning content (DeepSeek/R1)
+            reasoning_content = ""
+            if "choices" in data and len(data["choices"]) > 0:
+                msg_dict = data["choices"][0].get("message", {})
+                if "reasoning_content" in msg_dict and msg_dict["reasoning_content"]:
+                    reasoning_content = msg_dict["reasoning_content"]
+
+            # Fallback: Extract <think> tags from text if no native field
+            if not reasoning_content:
+                pattern = r'<think>(.*?)</think>'
+                match = re.search(pattern, response_content, re.DOTALL)
+                if match:
+                    reasoning_content = match.group(1).strip()
+                    response_content = response_content.replace(match.group(0), "").strip()
+
+            if reasoning_content:
+                print(f"[LLMs_Toolkit] 🧠 思考过程已捕获 ({len(reasoning_content)} 字): \n{reasoning_content[:150]}...\n")
 
             # Extract real token usage from API response (prefer actual over estimate)
             usage = data.get("usage", {})
