@@ -222,9 +222,6 @@ OPENAI_MODEL_NAME=gpt-4o-mini
 - **Multi-turn Memory Fix**: Fixed `openai_compatible.py` to properly store `assistant` responses when `enable_memory` is toggled on.
 - **Node Parameter Deserialization Bug UI**: Switched from dynamic widgets to naive `<canvas>` element drawings to fix the notorious parameter shift bug caused by `token_usage_display`.
 
-#### 🗑 Removed
-- **Redundant Token Output Pins**: Permanently removed the `input_tokens` and `output_tokens` pins from the main LLM node since these metrics are already elegantly rendered directly onto the node's foreground canvas.
-
 ---
 
 ## Open Source License
