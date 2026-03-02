@@ -17,6 +17,9 @@ class ImagePreprocessor:
                 "image": ("IMAGE", {"default": None}),
             },
             "optional": {
+                "image_2": ("IMAGE", {"default": None}),
+                "image_3": ("IMAGE", {"default": None}),
+                "image_4": ("IMAGE", {"default": None}),
                 "format": (["PNG", "JPEG", "WebP", "GIF", "BMP", "TIFF"], {"default": "PNG"}),
                 "quality": (["High", "Medium", "Low"], {"default": "High"}),
             }
@@ -35,34 +38,41 @@ class ImagePreprocessor:
         numpy_image = (numpy_image * 255).astype('uint8')
         return Image.fromarray(numpy_image)
 
-    def preprocess(self, image: Optional[Union[str, Image.Image]], format: str = "PNG", quality: str = "High"):
+    def preprocess(self, image: Optional[Union[str, Image.Image, torch.Tensor]] = None,
+                   image_2: Optional[Union[str, Image.Image, torch.Tensor]] = None,
+                   image_3: Optional[Union[str, Image.Image, torch.Tensor]] = None,
+                   image_4: Optional[Union[str, Image.Image, torch.Tensor]] = None,
+                   format: str = "PNG", quality: str = "High"):
         quality_map = {"High": 95, "Medium": 75, "Low": 50}
         quality_str = quality
         quality_val = quality_map.get(quality_str, 95)
         
-        if image is None:
-            raise ValueError("Image input cannot be None")
+        images_to_process = [img for img in [image, image_2, image_3, image_4] if img is not None]
+        
+        if not images_to_process:
+            raise ValueError("At least one image input must be provided.")
 
         image_urls = []
 
-        if isinstance(image, torch.Tensor):
-            if len(image.shape) == 4:
-                for i in range(image.shape[0]):
-                    pil_image = self._tensor_to_pil(image[i])
+        for img in images_to_process:
+            if isinstance(img, torch.Tensor):
+                if len(img.shape) == 4:
+                    for i in range(img.shape[0]):
+                        pil_image = self._tensor_to_pil(img[i])
+                        url = self._process_single_image(pil_image, format, quality_str, quality_val)
+                        image_urls.append(url)
+                else:
+                    pil_image = self._tensor_to_pil(img)
                     url = self._process_single_image(pil_image, format, quality_str, quality_val)
                     image_urls.append(url)
-            else:
-                pil_image = self._tensor_to_pil(image)
-                url = self._process_single_image(pil_image, format, quality_str, quality_val)
-                image_urls.append(url)
 
-        elif isinstance(image, Image.Image):
-            # Single PIL image
-            url = self._process_single_image(image, format, quality_str, quality_val)
-            image_urls.append(url)
-        
-        else:
-            raise ValueError("Unsupported image type. Expected torch.Tensor or PIL.Image.")
+            elif isinstance(img, Image.Image):
+                # Single PIL image
+                url = self._process_single_image(img, format, quality_str, quality_val)
+                image_urls.append(url)
+            
+            else:
+                raise ValueError("Unsupported image type. Expected torch.Tensor or PIL.Image.")
 
         # If only one image, return as string for backward compatibility? 
         # Plan says: "ImagePreprocessor output will change from str to List[str]"

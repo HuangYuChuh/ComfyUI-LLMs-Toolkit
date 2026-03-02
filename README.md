@@ -212,8 +212,6 @@ OPENAI_MODEL_NAME=gpt-4o-mini
 #### ✨ Added
 - **DeepSeek Reasoning Support**: Supported extracting deep thinking processes (`reasoning_content`) from DeepSeek R1 models, exposing it to a dedicated `reasoning` output pin in the generic node.
 - **o1/o3 Model System Role Compatibility**: Integrated a downgrade workaround for strict 'o1/o3' models by spoofing an `assistant` acceptance response.
-- **Multimodal Vision Support**: Actively integrated the **Image Preprocessor** node to safely parse, resize, and convert ComfyUI's internal image tensors to universal Base64 JSON payloads, bridging visual capabilities to OpenAI-compatible LLMs smoothly without throwing formatting exceptions. 
-
 #### 🛠 Changed
 - **Shared API Client Refactor**: Extracted HTTP request logic to `api_client.py` for smarter retrying equipped with Exponential Backoff & Jitter.
 - **Graceful Error Degradation**: The API node now outputs readable text error traces instead of throwing Python Exceptions, preventing ComfyUI workflows from halting abruptly.
