@@ -381,9 +381,9 @@ class ProviderManager {
                 const totalTokens = rows.reduce((s, r) => s + (r.total_tokens || 0), 0);
                 const avgLatency = Math.round(rows.reduce((s, r) => s + (r.elapsed_ms || 0), 0) / totalCalls);
 
-                const cardStyle = "flex:1;padding:12px 16px;background:var(--comfy-input-bg);border-radius:8px;border:1px solid var(--border-color);text-align:center;";
-                const cardLabel = "font-size:0.75em;color:var(--descrip-text);margin-bottom:4px;";
-                const cardValue = "font-size:1.3em;font-weight:bold;color:var(--fg-color);";
+                const cardStyle = { flex: "1", padding: "12px 16px", background: "var(--comfy-input-bg)", borderRadius: "8px", border: "1px solid var(--border-color)", textAlign: "center" };
+                const cardLabel = { fontSize: "0.75em", color: "var(--descrip-text)", marginBottom: "4px" };
+                const cardValue = { fontSize: "1.3em", fontWeight: "bold", color: "var(--fg-color)" };
 
                 const fmtTokens = (t) => t >= 1000000 ? `${(t / 1000000).toFixed(1)}M` : t >= 1000 ? `${(t / 1000).toFixed(1)}K` : String(t);
 
