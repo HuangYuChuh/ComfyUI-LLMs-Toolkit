@@ -328,7 +328,29 @@ class ProviderManager {
         this.selectedId = null;
         this.searchQuery = "";
         this.modal = null;
+        this.currentDraft = null;
     }
+
+    hasUnsavedChanges() {
+        if (!this.selectedId || !this.currentDraft) return false;
+        const original = this.providers.find(p => p.id === this.selectedId);
+        if (!original) return false;
+
+        const draftCopy = JSON.parse(JSON.stringify(this.currentDraft));
+        delete draftCopy._isNew;
+        const origCopy = JSON.parse(JSON.stringify(original));
+        delete origCopy._isNew;
+
+        return JSON.stringify(draftCopy) !== JSON.stringify(origCopy);
+    }
+
+    canNavigateAway() {
+        if (this.hasUnsavedChanges()) {
+            return confirm("You have unsaved changes. Discard them?");
+        }
+        return true;
+    }
+
 
     showCustomPrompt(title, defaultValue, callback) {
         const input = $el("input", { type: "text", value: defaultValue });
@@ -464,7 +486,9 @@ class ProviderManager {
         const closeBtn = $el("span.llm-pm-close", {
             innerHTML: "&times;",
             onclick: () => {
+                if (!this.canNavigateAway()) return;
                 this.modal.style.display = "none";
+                this.currentDraft = null;
                 // Optionally reload graph nodes to catch updated config
                 app.graph.setDirtyCanvas(true);
             }
@@ -481,7 +505,10 @@ class ProviderManager {
 
         const addBtn = $el("button.llm-pm-add-btn", {
             textContent: "+ Custom Provider",
-            onclick: () => this.createNewProvider(),
+            onclick: () => {
+                if (!this.canNavigateAway()) return;
+                this.createNewProvider();
+            },
             style: { padding: "6px 16px", fontSize: "0.9em", borderRadius: "4px", minHeight: "unset" }
         });
 
@@ -554,6 +581,8 @@ class ProviderManager {
 
             const item = $el("div.llm-pm-item" + (isActive ? ".active" : ""), {
                 onclick: () => {
+                    if (this.selectedId === p.id) return;
+                    if (!this.canNavigateAway()) return;
                     this.selectedId = p.id;
                     this.render();
                 }
@@ -578,7 +607,8 @@ class ProviderManager {
         }
 
         // Live working copy
-        const draft = JSON.parse(JSON.stringify(provider));
+        this.currentDraft = JSON.parse(JSON.stringify(provider));
+        const draft = this.currentDraft;
 
         // -- Header row (Name & Enable switch)
         const nameInput = $el("input", {
@@ -687,11 +717,23 @@ class ProviderManager {
             style: {
                 fontWeight: "bold", background: "#4CAF50", color: "white",
                 padding: "6px 16px", fontSize: "0.9em", borderRadius: "4px", minHeight: "unset",
-                display: "inline-flex", alignItems: "center"
+                display: "inline-flex", alignItems: "center", transition: "all 0.3s ease"
             },
-            onclick: () => {
+            onclick: async () => {
+                const originalHtml = saveBtn.innerHTML;
+                saveBtn.innerHTML = `⏳ Saving...`;
+                saveBtn.disabled = true;
+
                 if (draft._isNew) delete draft._isNew;
-                this.saveProvider(draft);
+                await this.saveProvider(draft);
+
+                saveBtn.innerHTML = `✅ Saved!`;
+                saveBtn.style.background = "#3d8b40"; // slightly darker green
+                setTimeout(() => {
+                    saveBtn.innerHTML = originalHtml;
+                    saveBtn.style.background = "#4CAF50";
+                    saveBtn.disabled = false;
+                }, 1500);
             }
         });
 
@@ -818,10 +860,10 @@ app.registerExtension({
                 }
 
                 const updateModelOptions = (selectedProviderLabel) => {
-                    if (selectedProviderLabel === "Custom/手动输入") {
-                        modelWidget.options.values = ["Custom/手动输入"];
-                        if (modelWidget.value !== "Custom/手动输入") {
-                            modelWidget.value = "Custom/手动输入";
+                    if (selectedProviderLabel === "LLM_CONFIG (from input)") {
+                        modelWidget.options.values = ["LLM_CONFIG (from input)"];
+                        if (modelWidget.value !== "LLM_CONFIG (from input)") {
+                            modelWidget.value = "LLM_CONFIG (from input)";
                         }
                         return;
                     }
@@ -834,8 +876,8 @@ app.registerExtension({
                             modelWidget.value = found.models[0];
                         }
                     } else {
-                        modelWidget.options.values = ["Custom/手动输入"];
-                        modelWidget.value = "Custom/手动输入";
+                        modelWidget.options.values = ["LLM_CONFIG (from input)"];
+                        modelWidget.value = "LLM_CONFIG (from input)";
                     }
                     app.graph.setDirtyCanvas(true);
                 };
