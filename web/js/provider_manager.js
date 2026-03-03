@@ -354,6 +354,15 @@ class ProviderManager {
 
             try {
                 const res = await api.fetchApi("/llm_toolkit/usage");
+                if (!res.ok) {
+                    this.contentContainer.innerHTML = "";
+                    if (res.status === 404) {
+                        this.contentContainer.appendChild($el("div.llm-pm-empty", "Usage API not available. Please restart ComfyUI to activate the new route."));
+                    } else {
+                        this.contentContainer.appendChild($el("div.llm-pm-empty", `API error: HTTP ${res.status}. Check terminal logs.`));
+                    }
+                    return;
+                }
                 const data = await res.json();
 
                 this.contentContainer.innerHTML = "";
