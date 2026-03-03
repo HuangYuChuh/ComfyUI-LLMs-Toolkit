@@ -248,17 +248,33 @@ def register_routes():
     try:
         from server import PromptServer
 
-        routes = PromptServer.instance.routes
+        server = PromptServer.instance
+        routes = server.routes
 
+        # Register via RouteTableDef (works if called before app.add_routes)
         routes.get("/llm_toolkit/providers")(get_providers)
         routes.get("/llm_toolkit/usage")(get_usage_stats)
         routes.post("/llm_toolkit/providers")(save_provider)
         routes.delete("/llm_toolkit/providers/{id}")(delete_provider)
         routes.post("/llm_toolkit/providers/check")(check_provider)
 
-        logger.info("Provider management API routes registered successfully.")
+        # Also register directly on app.router as fallback
+        # (handles case where app.add_routes(routes) was already called)
+        if hasattr(server, 'app') and server.app is not None:
+            try:
+                server.app.router.add_get("/llm_toolkit/usage", get_usage_stats)
+                server.app.router.add_get("/llm_toolkit/providers", get_providers)
+                server.app.router.add_post("/llm_toolkit/providers", save_provider)
+                server.app.router.add_delete("/llm_toolkit/providers/{id}", delete_provider)
+                server.app.router.add_post("/llm_toolkit/providers/check", check_provider)
+            except Exception:
+                pass  # If RouteTableDef already registered them, duplicates will error — that's fine
+
+        print("[LLMs_Toolkit] ✓ All API routes registered (including /llm_toolkit/usage)")
     except Exception as e:
-        logger.error(f"Failed to register API routes: {e}")
+        print(f"[LLMs_Toolkit] ✗ Failed to register API routes: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 # Auto-register when module is loaded by ComfyUI
