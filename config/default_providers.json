@@ -35,7 +35,7 @@
       "apiKey": "",
       "apiHost": "https://ark.cn-beijing.volces.com/api/v3",
       "models": [],
-      "enabled": true,
+      "enabled": false,
       "isSystem": true
     },
     {
@@ -48,7 +48,7 @@
         "generalv3.5",
         "4.0Ultra"
       ],
-      "enabled": true,
+      "enabled": false,
       "isSystem": true
     },
     {
@@ -62,7 +62,7 @@
         "glm-4-flash",
         "glm-4v-plus"
       ],
-      "enabled": true,
+      "enabled": false,
       "isSystem": true
     },
     {
@@ -76,7 +76,7 @@
         "moonshot-v1-32k",
         "moonshot-v1-128k"
       ],
-      "enabled": true,
+      "enabled": false,
       "isSystem": true
     },
     {
@@ -89,7 +89,7 @@
         "Baichuan4",
         "Baichuan3-Turbo"
       ],
-      "enabled": true,
+      "enabled": false,
       "isSystem": true
     },
     {
@@ -102,7 +102,7 @@
         "MiniMax-Text-01",
         "abab6.5s-chat"
       ],
-      "enabled": true,
+      "enabled": false,
       "isSystem": true
     },
     {
@@ -115,7 +115,7 @@
         "step-1-8k",
         "step-2-16k"
       ],
-      "enabled": true,
+      "enabled": false,
       "isSystem": true
     },
     {
@@ -127,7 +127,7 @@
       "models": [
         "SenseChat-5"
       ],
-      "enabled": true,
+      "enabled": false,
       "isSystem": true
     },
     {
@@ -137,7 +137,7 @@
       "apiKey": "",
       "apiHost": "https://apis.iflow.cn/v1",
       "models": [],
-      "enabled": true,
+      "enabled": false,
       "isSystem": true
     },
     {
@@ -149,7 +149,7 @@
       "models": [
         "Qwen/Qwen2.5-72B-Instruct"
       ],
-      "enabled": true,
+      "enabled": false,
       "isSystem": true
     }
   ]

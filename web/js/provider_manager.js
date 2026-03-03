@@ -532,8 +532,10 @@ class ProviderManager {
                 this.checkUnsaved(() => {
                     this.modal.style.display = "none";
                     this.currentDraft = null;
-                    // Optionally reload graph nodes to catch updated config
-                    app.graph.setDirtyCanvas(true);
+                    // Trigger full redraw of graph to apply changes
+                    if (app.graph) {
+                        app.graph.setDirtyCanvas(true);
+                    }
                 });
             }
         });
@@ -912,8 +914,8 @@ app.registerExtension({
                         return;
                     }
 
-                    // Match provider by name
-                    const found = providersCache.find(p => p.name === selectedProviderLabel);
+                    // Match provider by name, must be enabled
+                    const found = providersCache.find(p => p.name === selectedProviderLabel && p.enabled);
                     if (found && found.models && found.models.length > 0) {
                         modelWidget.options.values = found.models;
                         if (!found.models.includes(modelWidget.value)) {

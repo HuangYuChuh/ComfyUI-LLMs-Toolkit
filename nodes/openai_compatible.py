@@ -107,12 +107,15 @@ class OpenAICompatibleLoader:
     def INPUT_TYPES(cls):
         providers = _get_providers()
         
-        provider_names = [p['name'] for p in providers]
+        # Only include enabled providers in the dropdown
+        enabled_providers = [p for p in providers if p.get("enabled", True)]
+        
+        provider_names = [p['name'] for p in enabled_providers]
         provider_names.append("LLM_CONFIG (from input)")
         
-        # Collect all models from providers for the dropdown
+        # Collect all models from enabled providers for the dropdown
         all_models = ["Custom/手动输入", "LLM_CONFIG (from input)"]
-        for p in providers:
+        for p in enabled_providers:
             for m in p.get("models", []):
                 if m not in all_models:
                     all_models.append(m)
