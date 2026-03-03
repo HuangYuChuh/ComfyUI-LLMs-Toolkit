@@ -730,10 +730,24 @@ class ProviderManager {
         const renderModels = () => {
             modelsContainer.innerHTML = "";
             draft.models.forEach((m, idx) => {
+                const nameSpan = $el("span", {
+                    textContent: m,
+                    style: { cursor: "pointer" },
+                    title: "Double-click to edit",
+                    ondblclick: () => {
+                        this.showPrompt("Edit Model Name:", m, (newName) => {
+                            if (newName && newName.trim()) {
+                                draft.models[idx] = newName.trim();
+                                renderModels();
+                            }
+                        });
+                    }
+                });
                 modelsContainer.appendChild($el("span.llm-pm-model-tag", [
-                    $el("span", m),
+                    nameSpan,
                     $el("span.llm-pm-model-del", {
                         innerHTML: "&times;",
+                        title: "Delete model",
                         onclick: () => {
                             draft.models.splice(idx, 1);
                             renderModels();
