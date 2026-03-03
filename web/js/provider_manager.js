@@ -251,7 +251,7 @@ class ProviderManager {
         });
 
         const usageBtn = $el("button.llm-pm-add-btn", {
-            textContent: "📊 Usage Stats",
+            innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M13 5h8" /><path d="M13 9h5" /><path d="M13 15h8" /><path d="M13 19h5" /><path d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /></svg> Usage Stats`,
             onclick: () => {
                 this.checkUnsaved(() => {
                     this.selectedId = "USAGE_STATS";
@@ -357,29 +357,66 @@ class ProviderManager {
                 const data = await res.json();
 
                 this.contentContainer.innerHTML = "";
-                this.contentContainer.appendChild($el("h2", { textContent: "API Usage Dashboard", style: { margin: "0 0 20px 0" } }));
+                this.contentContainer.appendChild($el("h2", { textContent: "API Usage Dashboard", style: { margin: "0 0 12px 0" } }));
 
                 if (!data.usage || data.usage.length === 0) {
                     this.contentContainer.appendChild($el("div.llm-pm-empty", "No usage data recorded yet. Run a generation first."));
                     return;
                 }
 
+                // ── Summary Cards ──────────────────────────────────────
+                const rows = data.usage;
+                const totalCalls = rows.length;
+                const okCalls = rows.filter(r => r.status !== "error").length;
+                const errorCalls = totalCalls - okCalls;
+                const totalTokens = rows.reduce((s, r) => s + (r.total_tokens || 0), 0);
+                const avgLatency = Math.round(rows.reduce((s, r) => s + (r.elapsed_ms || 0), 0) / totalCalls);
+
+                const cardStyle = "flex:1;padding:12px 16px;background:var(--comfy-input-bg);border-radius:8px;border:1px solid var(--border-color);text-align:center;";
+                const cardLabel = "font-size:0.75em;color:var(--descrip-text);margin-bottom:4px;";
+                const cardValue = "font-size:1.3em;font-weight:bold;color:var(--fg-color);";
+
+                const fmtTokens = (t) => t >= 1000000 ? `${(t / 1000000).toFixed(1)}M` : t >= 1000 ? `${(t / 1000).toFixed(1)}K` : String(t);
+
+                const summaryRow = $el("div", { style: { display: "flex", gap: "12px", marginBottom: "16px" } }, [
+                    $el("div", { style: cardStyle }, [
+                        $el("div", { style: cardLabel, textContent: "Total Calls" }),
+                        $el("div", { style: cardValue, textContent: String(totalCalls) })
+                    ]),
+                    $el("div", { style: cardStyle }, [
+                        $el("div", { style: cardLabel, textContent: "Success / Error" }),
+                        $el("div", { style: cardValue, innerHTML: `<span style="color:#4CAF50">${okCalls}</span> / <span style="color:${errorCalls > 0 ? '#f44336' : 'var(--descrip-text)'}">${errorCalls}</span>` })
+                    ]),
+                    $el("div", { style: cardStyle }, [
+                        $el("div", { style: cardLabel, textContent: "Total Tokens" }),
+                        $el("div", { style: cardValue, textContent: fmtTokens(totalTokens) })
+                    ]),
+                    $el("div", { style: cardStyle }, [
+                        $el("div", { style: cardLabel, textContent: "Avg Latency" }),
+                        $el("div", { style: cardValue, textContent: `${avgLatency} ms` })
+                    ]),
+                ]);
+                this.contentContainer.appendChild(summaryRow);
+
+                // ── Data Table ─────────────────────────────────────────
                 const table = $el("table", { style: { width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.9em" } });
-                const thead = $el("tr", { style: { borderBottom: "1px solid var(--border-color)", color: "var(--descrip-text)" } });
-                ["Time", "Provider", "Model", "Tokens (In/Out)", "Time (ms)"].forEach(h => {
+                const thead = $el("tr", { style: { borderBottom: "2px solid var(--border-color)", color: "var(--descrip-text)" } });
+                ["Status", "Time", "Provider", "Model", "Tokens (In/Out)", "Latency"].forEach(h => {
                     thead.appendChild($el("th", { style: { padding: "8px" }, textContent: h }));
                 });
                 table.appendChild(thead);
 
                 // Show newest first
-                data.usage.reverse().forEach(row => {
-                    const tr = $el("tr", { style: { borderBottom: "1px solid var(--border-color)" } });
+                rows.reverse().forEach(row => {
+                    const isError = row.status === "error";
+                    const tr = $el("tr", { style: { borderBottom: "1px solid var(--border-color)", background: isError ? "rgba(244,67,54,0.08)" : "transparent" } });
                     const date = new Date(row.timestamp * 1000).toLocaleString();
 
+                    tr.appendChild($el("td", { style: { padding: "8px", textAlign: "center" }, innerHTML: isError ? `<span style="color:#f44336" title="Error">✗</span>` : `<span style="color:#4CAF50" title="OK">✓</span>` }));
                     tr.appendChild($el("td", { style: { padding: "8px" }, textContent: date }));
                     tr.appendChild($el("td", { style: { padding: "8px", fontWeight: "bold" }, textContent: row.provider }));
                     tr.appendChild($el("td", { style: { padding: "8px" }, textContent: row.model }));
-                    tr.appendChild($el("td", { style: { padding: "8px" }, textContent: `${row.input_tokens} / ${row.output_tokens}` }));
+                    tr.appendChild($el("td", { style: { padding: "8px" }, textContent: isError ? "-" : `${row.input_tokens} / ${row.output_tokens}` }));
                     tr.appendChild($el("td", { style: { padding: "8px", color: "var(--descrip-text)" }, textContent: `${row.elapsed_ms} ms` }));
                     table.appendChild(tr);
                 });

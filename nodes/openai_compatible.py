@@ -5,6 +5,7 @@ import urllib.request
 import urllib.error
 import ssl
 import os
+import threading
 from typing import Dict, Any, List, Union, Optional
 import base64
 from io import BytesIO
@@ -22,6 +23,8 @@ _CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "config")
 _PROVIDERS_FILE = os.path.join(_CONFIG_DIR, "providers.json")
 
 _PROVIDER_CACHE = {"mtime": 0, "data": []}
+_USAGE_LOCK = threading.Lock()
+_USAGE_MAX_LINES = 5000
 
 def _get_providers() -> List[Dict[str, Any]]:
     try:
@@ -185,8 +188,9 @@ class OpenAICompatibleLoader:
         print(f"[LLMs_Toolkit] {time.strftime('%H:%M:%S')} ← {fmt(in_tok)}/{fmt(out_tok)}t ({ms}ms)\n")
 
     @staticmethod
-    def _log_usage(provider_name: str, model: str, in_tok: int, out_tok: int, start: float) -> None:
-        """Append usage stats to config/usage.jsonl"""
+    def _log_usage(provider_name: str, model: str, in_tok: int, out_tok: int,
+                   start: float, status: str = "ok") -> None:
+        """Append usage stats to config/usage.jsonl (thread-safe, auto-rotated)."""
         try:
             usage_file = os.path.join(_CONFIG_DIR, "usage.jsonl")
             elapsed_ms = int((time.time() - start) * 1000)
@@ -197,10 +201,27 @@ class OpenAICompatibleLoader:
                 "input_tokens": in_tok,
                 "output_tokens": out_tok,
                 "total_tokens": in_tok + out_tok,
-                "elapsed_ms": elapsed_ms
+                "elapsed_ms": elapsed_ms,
+                "status": status
             }
-            with open(usage_file, "a", encoding="utf-8") as f:
-                f.write(json_lib.dumps(record, ensure_ascii=False) + "\n")
+            line = json_lib.dumps(record, ensure_ascii=False) + "\n"
+
+            with _USAGE_LOCK:
+                # Auto-rotate: if file exceeds max lines, keep the last half
+                if os.path.exists(usage_file):
+                    try:
+                        with open(usage_file, "r", encoding="utf-8") as f:
+                            lines = f.readlines()
+                        if len(lines) >= _USAGE_MAX_LINES:
+                            keep = lines[len(lines) // 2:]
+                            with open(usage_file, "w", encoding="utf-8") as f:
+                                f.writelines(keep)
+                            print(f"[LLMs_Toolkit] Usage log rotated: {len(lines)} -> {len(keep)} entries")
+                    except Exception:
+                        pass  # rotation failure is non-critical
+
+                with open(usage_file, "a", encoding="utf-8") as f:
+                    f.write(line)
         except Exception as e:
             print(f"[LLMs_Toolkit] Failed to write usage log: {e}")
 
@@ -416,6 +437,7 @@ class OpenAICompatibleLoader:
             elapsed_ms = int((time.time() - start) * 1000)
             err = classify_error(e, provider_name, actual_model, request_size_mb, elapsed_ms)
             log_error(err, provider_name, actual_model, request_size_mb, elapsed_ms)
+            self._log_usage(provider_name, actual_model, 0, 0, start, status="error")
 
             # Graceful degradation: return error text instead of crashing
             return self._error_result(err.user_message())

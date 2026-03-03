@@ -219,21 +219,26 @@ async def check_provider(request: web.Request) -> web.Response:
 
 
 async def get_usage_stats(request: web.Request) -> web.Response:
-    """GET /llm_toolkit/usage — Return token usage history."""
+    """GET /llm_toolkit/usage — Return token usage history (last 500 entries)."""
+    from collections import deque
     usage_file = _CONFIG_DIR / "usage.jsonl"
-    stats = []
+    max_entries = 500
+    stats = deque(maxlen=max_entries)
     
     if usage_file.exists():
         try:
             with open(usage_file, "r", encoding="utf-8") as f:
                 for line in f:
-                    if line.strip():
-                        stats.append(json.loads(line))
+                    stripped = line.strip()
+                    if stripped:
+                        try:
+                            stats.append(json.loads(stripped))
+                        except json.JSONDecodeError:
+                            continue  # skip corrupted lines
         except Exception as e:
             logger.error(f"Failed to read usage stats: {e}")
             
-    # Return last 200 entries to avoid massive payloads
-    return web.json_response({"status": "ok", "usage": stats[-200:]})
+    return web.json_response({"status": "ok", "usage": list(stats)})
 
 
 # ─── Route Registration ─────────────────────────────────────────────────────
