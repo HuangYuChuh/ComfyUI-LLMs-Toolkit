@@ -21,13 +21,19 @@ except ImportError:
 _CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "config")
 _PROVIDERS_FILE = os.path.join(_CONFIG_DIR, "providers.json")
 
+_PROVIDER_CACHE = {"mtime": 0, "data": []}
+
 def _get_providers() -> List[Dict[str, Any]]:
     try:
         if os.path.exists(_PROVIDERS_FILE):
-            with open(_PROVIDERS_FILE, "r", encoding="utf-8") as f:
-                data = json_lib.load(f)
-                providers = data.get("providers", [])
-                return [p for p in providers if p.get("enabled", True)]
+            mtime = os.path.getmtime(_PROVIDERS_FILE)
+            if mtime != _PROVIDER_CACHE["mtime"]:
+                with open(_PROVIDERS_FILE, "r", encoding="utf-8") as f:
+                    data = json_lib.load(f)
+                    providers = data.get("providers", [])
+                    _PROVIDER_CACHE["data"] = [p for p in providers if p.get("enabled", True)]
+                    _PROVIDER_CACHE["mtime"] = mtime
+            return _PROVIDER_CACHE["data"]
     except Exception as e:
         print(f"[LLMs_Toolkit] Failed to load providers.json: {e}")
     return []
@@ -114,7 +120,7 @@ class OpenAICompatibleLoader:
         provider_names.append("LLM_CONFIG (from input)")
         
         # Collect all models from enabled providers for the dropdown
-        all_models = ["Custom/手动输入", "LLM_CONFIG (from input)"]
+        all_models = ["Custom Input", "LLM_CONFIG (from input)"]
         for p in enabled_providers:
             for m in p.get("models", []):
                 if m not in all_models:
@@ -123,7 +129,7 @@ class OpenAICompatibleLoader:
         return {
             "required": {
                 "provider": (provider_names, {"default": provider_names[0] if provider_names else "LLM_CONFIG (from input)"}),
-                "model": (all_models, {"default": all_models[1] if len(all_models) > 1 else "Custom/手动输入"}),
+                "model": (all_models, {"default": all_models[1] if len(all_models) > 1 else "Custom Input"}),
                 "system_prompt": ("STRING", {"default": "You are an AI assistant", "multiline": True}),
                 "prompt": ("STRING", {"multiline": True, "default": "hello"}),
             },
@@ -134,7 +140,8 @@ class OpenAICompatibleLoader:
                 "max_tokens": ("INT", {"default": 2048, "min": 1, "max": 4096}),
                 "enable_memory": ("BOOLEAN", {"default": False, "label": "Enable Memory"}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff})
-            }
+            },
+            "hidden": {"unique_id": "UNIQUE_ID"}
         }
 
     RETURN_TYPES = ("STRING", "STRING")
@@ -142,8 +149,7 @@ class OpenAICompatibleLoader:
     FUNCTION = "generate"
     CATEGORY = "🚦ComfyUI_LLMs_Toolkit/LLM"
 
-    def __init__(self):
-        self.conversation_history: List[Dict[str, Any]] = []
+    _MEMORY_STORE = {}
 
     # ── Logging ──────────────────────────────────────────────────────────
 
@@ -181,21 +187,29 @@ class OpenAICompatibleLoader:
     # ── Memory ───────────────────────────────────────────────────────────
 
     def _apply_memory(
-        self, messages: List[Dict[str, Any]], enable: bool
+        self, messages: List[Dict[str, Any]], enable: bool, unique_id: str
     ) -> List[Dict[str, Any]]:
-        """Manage conversation history."""
+        """Manage conversation history per node instance."""
         if not enable:
-            self.conversation_history = []
+            if unique_id in self._MEMORY_STORE:
+                del self._MEMORY_STORE[unique_id]
             return messages
+
+        history = self._MEMORY_STORE.setdefault(unique_id, [])
 
         for msg in messages:
             if not any(
                 h["role"] == msg["role"] and h["content"] == msg["content"]
-                for h in self.conversation_history
+                for h in history
             ):
-                self.conversation_history.append(msg)
+                history.append(msg)
+                
+        # Limit history to prevent unbounded growth
+        if len(history) > 40:
+            history = history[-40:]
+            self._MEMORY_STORE[unique_id] = history
 
-        return list(self.conversation_history)
+        return list(history)
 
     # ── Result helpers ───────────────────────────────────────────────────
 
@@ -241,7 +255,8 @@ class OpenAICompatibleLoader:
         max_tokens: int = 2048,
         prep_img: Optional[str] = None,
         enable_memory: bool = False,
-        seed: int = 0
+        seed: int = 0,
+        unique_id: str = ""
     ) -> dict:
         """Main generation entry point with graceful degradation."""
 
@@ -250,7 +265,7 @@ class OpenAICompatibleLoader:
 
         api_key = ""
         base_url = ""
-        actual_model = "" if model in ("Custom/手动输入", _FROM_INPUT, "") else model
+        actual_model = "" if model in ("Custom Input", "Custom/手动输入", _FROM_INPUT, "") else model
         provider_id = "custom"
         provider_name = "Custom Endpoint"
 
@@ -277,7 +292,7 @@ class OpenAICompatibleLoader:
 
         # ── Input validation (fail fast, don't waste API quota) ──────
         if not prompt or not prompt.strip():
-            return self._error_result("输入的 Prompt 为空，请填写内容后重试")
+            return self._error_result("Prompt is empty. Please enter content to generate.")
         if not api_key or not api_key.strip():
             return self._error_result(
                 "API Key is missing. Please configure it in the [⚙️ LLMs] settings "
@@ -305,7 +320,7 @@ class OpenAICompatibleLoader:
                 image_input = stripped
 
         # ── Logging ──────────────────────────────────────────────────
-        print(f"{self.TAG} 使用配置: {provider_name} / {actual_model}")
+        print(f"{self.TAG} Using config: {provider_name} / {actual_model}")
         start = self._log_start(
             provider_name, actual_model, system_prompt, prompt, image_input
         )
@@ -313,14 +328,14 @@ class OpenAICompatibleLoader:
         # ── Build messages ───────────────────────────────────────────
         content = _build_content(prompt, image_input)
         messages = _build_messages(content, system_prompt, provider_name)
-        messages = self._apply_memory(messages, enable_memory)
+        messages = self._apply_memory(messages, enable_memory, unique_id)
 
         # ── o1/o3 System Role Downgrade (Compatibility) ──────────────
-        if re.search(r'o[1-3]', actual_model):
+        if re.search(r'\bo[1-3](?:-mini|-preview)?\b', actual_model):
             for i, msg in enumerate(messages):
                 if msg["role"] == "system":
                     messages[i] = {"role": "user", "content": msg["content"]}
-                    messages.insert(i + 1, {"role": "assistant", "content": "好的，我会按照你的指示来操作"})
+                    messages.insert(i + 1, {"role": "assistant", "content": "Understood, I will follow your instructions."})
                     break
 
         # ── Build payload (clean, standard fields) ────────────
@@ -360,7 +375,7 @@ class OpenAICompatibleLoader:
                     response_content = response_content.replace(match.group(0), "").strip()
 
             if reasoning_content:
-                print(f"[LLMs_Toolkit] 🧠 思考过程已捕获 ({len(reasoning_content)} 字): \n{reasoning_content[:150]}...\n")
+                print(f"[LLMs_Toolkit] 🧠 Reasoning content captured ({len(reasoning_content)} chars): \n{reasoning_content[:150]}...\n")
 
             # Extract real token usage from API response (prefer actual over estimate)
             usage = data.get("usage", {})
@@ -370,8 +385,9 @@ class OpenAICompatibleLoader:
             self._log_done(response_content, input_tokens, output_tokens, start)
             
             # Save assistant response to memory if enabled
-            if enable_memory:
-                self._conversation_history.append({"role": "assistant", "content": response_content})
+            if enable_memory and unique_id:
+                history = self._MEMORY_STORE.get(unique_id, [])
+                history.append({"role": "assistant", "content": response_content})
                 
             return self._success(response_content, reasoning_content, input_tokens, output_tokens)
 

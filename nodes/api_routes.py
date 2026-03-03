@@ -29,7 +29,7 @@ logger = logging.getLogger("[LLMs_Toolkit.Routes]")
 def _ensure_providers_file() -> dict:
     """
     Ensure providers.json exists. If not, copy from default_providers.json.
-    Returns the parsed providers data.
+    Returns the parsed providers data with schema migration applied.
     """
     _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -43,7 +43,32 @@ def _ensure_providers_file() -> dict:
             _PROVIDERS_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
             logger.warning("No default_providers.json found, created empty providers.json.")
 
-    return _load_providers()
+    data = _load_providers()
+    
+    # ── Schema Migration ──────────────────────────────────────────────────
+    if _DEFAULT_PROVIDERS_FILE.exists():
+        try:
+            with open(_DEFAULT_PROVIDERS_FILE, "r", encoding="utf-8") as f:
+                default_data = json.load(f)
+                default_providers = {p.get("id"): p for p in default_data.get("providers", []) if p.get("id")}
+                
+            needs_save = False
+            for p in data.get("providers", []):
+                # If it's a system provider (or ID matches a default), ensure it has all default keys
+                if p.get("id") in default_providers:
+                    dp = default_providers[p["id"]]
+                    for key, val in dp.items():
+                        if key not in p:
+                            p[key] = val
+                            needs_save = True
+            
+            if needs_save:
+                _save_providers(data)
+                logger.info("Migrated providers.json schema to include missing default fields.")
+        except Exception as e:
+            logger.error(f"Schema migration failed: {e}")
+
+    return data
 
 
 def _load_providers() -> dict:
@@ -163,11 +188,12 @@ async def check_provider(request: web.Request) -> web.Response:
     # Use the shared LLMClient to perform a minimal test call
     try:
         import api_client
+        import asyncio
         client = api_client.LLMClient(base_url=api_host, api_key=api_key)
         
         # 1. Try fetching models (doesn't consume tokens)
         try:
-            client.list_models()
+            await asyncio.to_thread(client.list_models)
         except Exception as e_models:
             logger.warning(f"Check API: /models failed ({str(e_models)[:100]}), falling back to /chat/completions")
             
@@ -178,7 +204,7 @@ async def check_provider(request: web.Request) -> web.Response:
                 "max_tokens": 1,
                 "stream": False
             }
-            client.chat(payload)
+            await asyncio.to_thread(client.chat, payload)
 
         return web.json_response({
             "status": "ok",

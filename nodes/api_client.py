@@ -36,7 +36,7 @@ class APIError:
         parts = [f"[{self.error_type}] {self.cause}"]
         if self.api_message:
             parts.append(f"API: {self.api_message[:120]}")
-        parts.append(f"建议: {self.hint}")
+        parts.append(f"Suggestion: {self.hint}")
         return "\n".join(parts)
 
 
@@ -52,66 +52,66 @@ def classify_error(
     err = APIError(
         error_type="UNKNOWN",
         cause=error_str[:200],
-        hint="检查终端完整日志获取更多信息"
+        hint="Check terminal for full logs."
     )
 
     if "HTTP 401" in error_str or "invalid_api_key" in error_str or "Unauthorized" in error_str:
         err.error_type = "AUTH"
-        err.cause = "API Key 无效或已过期"
-        err.hint = f"请检查 {provider_name} 的 API Key 是否正确配置"
-        err.details.append("验证失败,请确认 API Key 有效且未过期")
+        err.cause = "API Key is invalid or expired"
+        err.hint = f"Please check {provider_name}'s API Key."
+        err.details.append("Validation failed, ensure your API Key is valid.")
 
     elif "HTTP 429" in error_str or "rate_limit" in error_str:
         err.error_type = "RATE_LIMIT"
-        err.cause = "请求频率超限 (已自动重试后仍失败)"
-        err.hint = "请等待片刻后重试，或升级 API 套餐"
-        err.details.append("触发了速率限制")
+        err.cause = "Rate limit exceeded (retries exhausted)"
+        err.hint = "Please wait a moment before trying again, or upgrade your API tier."
+        err.details.append("Encountered rate limits.")
 
     elif "HTTP 413" in error_str or "Payload Too Large" in error_str:
         err.error_type = "PAYLOAD_TOO_LARGE"
-        err.cause = f"请求体过大 ({request_size_mb:.2f}MB)"
-        err.hint = "请压缩图片或减少输入内容"
-        err.details.append("建议: 压缩图片到 1024x1024 以下,或降低图片质量")
+        err.cause = f"Payload too large ({request_size_mb:.2f}MB)"
+        err.hint = "Please compress your images or reduce the text input length."
+        err.details.append("Advice: Compress images to <1024x1024, or reduce quality.")
 
     elif "HTTP 400" in error_str or "invalid_request" in error_str:
         err.error_type = "BAD_REQUEST"
-        err.cause = "请求参数有误"
-        err.hint = f"请检查模型名称 '{model}' 是否正确"
+        err.cause = "Bad Request (Parameters error)"
+        err.hint = f"Please check if the model name '{model}' is correct."
         if request_size_mb > 10:
-            err.details.append(f"请求体较大 ({request_size_mb:.2f}MB),可能超过服务器限制")
+            err.details.append(f"Payload is quite large ({request_size_mb:.2f}MB), might exceed server limits.")
 
     elif "HTTP 404" in error_str or "model_not_found" in error_str:
         err.error_type = "MODEL"
-        err.cause = f"模型 '{model}' 不存在"
-        err.hint = f"请确认 {provider_name} 支持该模型名称"
+        err.cause = f"Model '{model}' not found"
+        err.hint = f"Please confirm if {provider_name} supports this model."
 
     elif "HTTP 5" in error_str:
         err.error_type = "SERVER"
-        err.cause = "API 服务端错误 (已自动重试后仍失败)"
-        err.hint = f"{provider_name} 服务可能暂时不可用，请稍后重试"
+        err.cause = "API Server Error (retries exhausted)"
+        err.hint = f"The {provider_name} service may be temporarily down, please try again later."
 
     elif "Broken pipe" in error_str:
         err.error_type = "BROKEN_PIPE"
-        err.cause = "连接在传输数据时被服务器关闭"
-        err.hint = "可能是请求体过大或服务器超时"
+        err.cause = "Connection closed by server while transferring data"
+        err.hint = "Payload might be too large or server timed out."
         if request_size_mb > 5:
-            err.details.append(f"请求体很大 ({request_size_mb:.2f}MB),建议压缩图片")
+            err.details.append(f"Payload is large ({request_size_mb:.2f}MB), try compressing images.")
 
     elif "timed out" in error_str.lower() or "timeout" in error_str.lower():
         err.error_type = "TIMEOUT"
-        err.cause = f"请求超时 ({elapsed_ms / 1000:.1f}秒)"
-        err.hint = "网络连接缓慢或 API 响应时间过长"
+        err.cause = f"Request timed out ({elapsed_ms / 1000:.1f}s)"
+        err.hint = "Network connection is slow or API response time is too long."
 
     elif "connection" in error_str.lower() or "URLError" in type(error).__name__:
         err.error_type = "NETWORK"
-        err.cause = "无法连接到 API 服务器"
-        err.hint = "请检查网络连接和代理设置"
-        err.details.append("可能原因: 网络断开 / 防火墙阻止 / 代理配置错误")
+        err.cause = "Could not connect to the API server"
+        err.hint = "Please check your network and proxy settings."
+        err.details.append("Possible causes: Network disconnected / Firewall / Proxy error.")
 
     elif "missing 'choices'" in error_str:
         err.error_type = "RESPONSE"
-        err.cause = "API 返回了非标准格式"
-        err.hint = "API 可能返回了错误信息而非正常结果"
+        err.cause = "API returned an unexpected format"
+        err.hint = "The API might return error text instead of JSON payload."
 
     # Extract API error message from JSON
     msg_match = re.search(r'"message"\s*:\s*"([^"]+)"', error_str)
@@ -128,14 +128,14 @@ def log_error(err: APIError, provider_name: str, model: str,
     print(f"")
     print(f"[LLMs_Toolkit] {ts} ✗ {err.error_type} ERROR ({elapsed_ms}ms)")
     print(f"   ┌──────────────────────────────────────────────")
-    print(f"   │ 服务商  {provider_name}")
-    print(f"   │ 模型    {model or 'default'}")
+    print(f"   │ Provider  {provider_name}")
+    print(f"   │ Model     {model or 'default'}")
     if request_size_mb > 0:
-        print(f"   │ 请求大小 {request_size_mb:.2f} MB")
-    print(f"   │ 原因    {err.cause}")
+        print(f"   │ Payload   {request_size_mb:.2f} MB")
+    print(f"   │ Cause     {err.cause}")
     if err.api_message:
-        print(f"   │ API消息 {err.api_message[:120]}")
-    print(f"   │ 建议    {err.hint}")
+        print(f"   │ API Msg   {err.api_message[:120]}")
+    print(f"   │ Hint      {err.hint}")
     if err.details:
         print(f"   │")
         for i, detail in enumerate(err.details, 1):
@@ -248,7 +248,7 @@ class LLMClient:
         data_bytes = json.dumps(payload).encode("utf-8")
         data_size_mb = len(data_bytes) / (1024 * 1024)
         if data_size_mb > 1:
-            print(f"{self.TAG} 请求体大小: {data_size_mb:.2f} MB")
+            print(f"{self.TAG} Request payload size: {data_size_mb:.2f} MB")
 
         last_error = None
 
@@ -278,9 +278,9 @@ class LLMClient:
                     # Respect Retry-After header if present
                     wait = _parse_retry_after(e.headers) or self._backoff(attempt, is_rate_limit=(e.code == 429))
                     print(
-                        f"{self.TAG} HTTP {e.code} 错误, "
-                        f"重试 {attempt + 1}/{self.max_retries} "
-                        f"(等待 {wait:.1f}s)..."
+                        f"{self.TAG} HTTP {e.code} Error. "
+                        f"Retrying {attempt + 1}/{self.max_retries} "
+                        f"(wait {wait:.1f}s)..."
                     )
                     time.sleep(wait)
                     continue
@@ -293,7 +293,7 @@ class LLMClient:
 
                 if self._is_connection_error(error_msg) and attempt < self.max_retries:
                     wait = self._backoff(attempt)
-                    print(f"{self.TAG} 连接错误, 重试 {attempt + 1}/{self.max_retries} (等待 {wait:.1f}s)...")
+                    print(f"{self.TAG} Connection Error. Retrying {attempt + 1}/{self.max_retries} (wait {wait:.1f}s)...")
                     time.sleep(wait)
                     continue
 
@@ -303,16 +303,16 @@ class LLMClient:
                 last_error = e
                 if attempt < self.max_retries:
                     wait = self._backoff(attempt)
-                    print(f"{self.TAG} 超时/IO错误, 重试 {attempt + 1}/{self.max_retries} (等待 {wait:.1f}s)...")
+                    print(f"{self.TAG} Timeout/IO Error. Retrying {attempt + 1}/{self.max_retries} (wait {wait:.1f}s)...")
                     time.sleep(wait)
                     continue
-                raise Exception(f"TimeoutError | 请求超过 {self.timeout} 秒未响应")
+                raise Exception(f"TimeoutError | Request hung for over {self.timeout} seconds")
 
         # All retries exhausted
         if last_error:
             raise Exception(
                 f"URLError | {str(getattr(last_error, 'reason', last_error))} "
-                f"(重试 {self.max_retries} 次后仍失败)"
+                f"(Failed after {self.max_retries} retries)"
             )
         raise Exception("Unknown error occurred")
 

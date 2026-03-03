@@ -44,3 +44,6 @@ test_api.py
 
 # User Config (Contains API Keys)
 config/providers.json
+
+# GitHub
+.github/
