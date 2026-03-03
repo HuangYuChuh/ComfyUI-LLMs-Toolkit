@@ -241,41 +241,33 @@ async def get_usage_stats(request: web.Request) -> web.Response:
     return web.json_response({"status": "ok", "usage": list(stats)})
 
 
-# ─── Route Registration ─────────────────────────────────────────────────────
+# ─── Route Registration (decorator-based, same pattern as ComfyUI-Manager) ──
 
-def register_routes():
-    """Register all provider management routes with ComfyUI's PromptServer."""
-    try:
-        from server import PromptServer
+try:
+    from server import PromptServer
 
-        server = PromptServer.instance
-        routes = server.routes
+    @PromptServer.instance.routes.get("/llm_toolkit/providers")
+    async def _route_get_providers(request):
+        return await get_providers(request)
 
-        # Register via RouteTableDef (works if called before app.add_routes)
-        routes.get("/llm_toolkit/providers")(get_providers)
-        routes.get("/llm_toolkit/usage")(get_usage_stats)
-        routes.post("/llm_toolkit/providers")(save_provider)
-        routes.delete("/llm_toolkit/providers/{id}")(delete_provider)
-        routes.post("/llm_toolkit/providers/check")(check_provider)
+    @PromptServer.instance.routes.get("/llm_toolkit/usage")
+    async def _route_get_usage(request):
+        return await get_usage_stats(request)
 
-        # Also register directly on app.router as fallback
-        # (handles case where app.add_routes(routes) was already called)
-        if hasattr(server, 'app') and server.app is not None:
-            try:
-                server.app.router.add_get("/llm_toolkit/usage", get_usage_stats)
-                server.app.router.add_get("/llm_toolkit/providers", get_providers)
-                server.app.router.add_post("/llm_toolkit/providers", save_provider)
-                server.app.router.add_delete("/llm_toolkit/providers/{id}", delete_provider)
-                server.app.router.add_post("/llm_toolkit/providers/check", check_provider)
-            except Exception:
-                pass  # If RouteTableDef already registered them, duplicates will error — that's fine
+    @PromptServer.instance.routes.post("/llm_toolkit/providers")
+    async def _route_save_provider(request):
+        return await save_provider(request)
 
-        print("[LLMs_Toolkit] ✓ All API routes registered (including /llm_toolkit/usage)")
-    except Exception as e:
-        print(f"[LLMs_Toolkit] ✗ Failed to register API routes: {e}")
-        import traceback
-        traceback.print_exc()
+    @PromptServer.instance.routes.delete("/llm_toolkit/providers/{id}")
+    async def _route_delete_provider(request):
+        return await delete_provider(request)
 
+    @PromptServer.instance.routes.post("/llm_toolkit/providers/check")
+    async def _route_check_provider(request):
+        return await check_provider(request)
 
-# Auto-register when module is loaded by ComfyUI
-register_routes()
+    print("[LLMs_Toolkit] ✓ All API routes registered (including /llm_toolkit/usage)")
+except Exception as e:
+    print(f"[LLMs_Toolkit] ✗ Failed to register API routes: {e}")
+    import traceback
+    traceback.print_exc()

@@ -35,9 +35,13 @@ if nodes_dir.exists():
             
             if hasattr(module, "NODE_DISPLAY_NAME_MAPPINGS"):
                 NODE_DISPLAY_NAME_MAPPINGS.update(module.NODE_DISPLAY_NAME_MAPPINGS)
+            
+            print(f"[LLMs_Toolkit] ✓ Loaded module: {py_file.stem}")
                 
         except Exception as e:
-            print(f"[LLMs_Toolkit] Failed to load {py_file.stem}: {e}")
+            print(f"[LLMs_Toolkit] ✗ Failed to load {py_file.stem}: {e}")
+            import traceback
+            traceback.print_exc()
 
 WEB_DIRECTORY = "./web"
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
