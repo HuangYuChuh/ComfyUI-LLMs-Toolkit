@@ -461,43 +461,64 @@ class ProviderManager {
             $el("div.llm-pm-header", [
 
                 $el("h2.llm-pm-title", [
-                    t("manager_title"),
-                    $el("button", {
-                        innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-language"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" /><path d="M4 6.371h7" /><path d="M5 9c0 2.144 2.252 3.908 6 4" /><path d="M12 20l4 -9l4 9" /><path d="M19.1 18h-6.2" /><path d="M6.694 3 l.793 .582" /></svg>`,
-                        title: getLang() === "zh" ? "Switch to English" : "切换至中文",
-                        onclick: () => {
-                            const current = getLang();
-                            localStorage.setItem("llm_pm_lang", current === "zh" ? "en" : "zh");
-
-                            // Re-render UI
-                            this.modal.remove();
-                            this.modal = null;
-                            this.show();
-
-                            // Update the main menu button if possible
-                            const menuBtn = document.querySelector('.comfyui-button[title*="Manage LLM API"], .comfyui-button[title*="管理 LLM API"]');
-                            if (menuBtn) {
-                                const contentSpan = menuBtn.querySelector('.comfyui-button-content');
-                                if (contentSpan) contentSpan.textContent = t("menu_button");
-                                menuBtn.title = t("menu_tooltip");
-                            }
-                        },
+                    t("manager_title")
+                ]),
+                $el("div", { style: { display: "flex", alignItems: "center", gap: "16px" } }, [
+                    $el("div", {
                         style: {
-                            marginLeft: "12px",
-                            padding: "4px",
+                            position: "relative",
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "center",
-                            borderRadius: "8px",
                             background: "rgba(255,255,255,0.08)",
                             border: "1px solid rgba(255,255,255,0.15)",
-                            color: "var(--glass-text-secondary)",
-                            cursor: "pointer",
+                            borderRadius: "8px",
                             transition: "all 0.2s ease"
                         }
-                    })
-                ]),
-                closeBtn
+                    }, [
+                        $el("div", {
+                            style: { position: "absolute", left: "8px", display: "flex", pointerEvents: "none", color: "var(--glass-text-secondary)" },
+                            innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-language"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" /><path d="M4 6.371h7" /><path d="M5 9c0 2.144 2.252 3.908 6 4" /><path d="M12 20l4 -9l4 9" /><path d="M19.1 18h-6.2" /><path d="M6.694 3 l.793 .582" /></svg>`
+                        }),
+                        $el("select", {
+                            onchange: (e) => {
+                                localStorage.setItem("llm_pm_lang", e.target.value);
+                                // Re-render UI
+                                this.modal.remove();
+                                this.modal = null;
+                                this.show();
+
+                                // Update the main menu button
+                                const menuBtn = document.querySelector('.comfyui-button[title*="Manage LLM API"], .comfyui-button[title*="管理 LLM API"]');
+                                if (menuBtn) {
+                                    const contentSpan = menuBtn.querySelector('.comfyui-button-content');
+                                    if (contentSpan) contentSpan.textContent = t("menu_button");
+                                    menuBtn.title = t("menu_tooltip");
+                                }
+                            },
+                            style: {
+                                background: "transparent",
+                                color: "var(--glass-text-primary)",
+                                border: "none",
+                                outline: "none",
+                                cursor: "pointer",
+                                padding: "6px 28px 6px 30px",
+                                appearance: "none",
+                                fontSize: "0.85em",
+                                fontFamily: "inherit"
+                            }
+                        }, [
+                            $el("option", { value: "zh", textContent: "简体中文" }),
+                            $el("option", { value: "en", textContent: "English" })
+                        ], (el) => {
+                            el.value = getLang();
+                        }),
+                        $el("div", {
+                            style: { position: "absolute", right: "8px", display: "flex", pointerEvents: "none", color: "var(--glass-text-secondary)" },
+                            innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`
+                        })
+                    ]),
+                    closeBtn
+                ])
             ]),
             $el("div.llm-pm-body", [
                 $el("div.llm-pm-sidebar", [
