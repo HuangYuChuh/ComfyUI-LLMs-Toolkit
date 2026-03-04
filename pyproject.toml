@@ -20,7 +20,7 @@ license = {file = "LICENSE"}
 #     "Environment :: GPU :: Apple Metal",    # Apple Metal support
 # ]
 
-dependencies = ["numpy", "Pillow", "aiohttp"]
+dependencies = ["Pillow", "aiohttp"]
 
 [project.urls]
 Repository = "https://github.com/HuangYuChuh/ComfyUI-LLMs-Toolkit"
