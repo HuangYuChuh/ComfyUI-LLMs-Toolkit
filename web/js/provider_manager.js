@@ -12,6 +12,146 @@ $el("link", {
     href: "extensions/ComfyUI-LLMs-Toolkit/css/provider_manager.css"
 });
 
+
+// ============================================================================
+// i18n System
+// ============================================================================
+const I18N_DICT = {
+    en: {
+        manager_title: "LLMs Toolkit Manager",
+        unsaved_title: "Unsaved Changes",
+        unsaved_msg: "You have unsaved changes.\nAre you sure you want to discard them?",
+        cancel: "Cancel",
+        ok: "OK",
+        confirm: "Confirm",
+        error: "Error",
+        load_error: "Failed to load provider configuration. Please check the terminal logs.",
+        save_failed: "Save Failed",
+        save_err: "Save failed.",
+        delete_title: "Delete Provider",
+        delete_msg: "Are you sure you want to delete this custom provider?\nThis action cannot be undone.",
+        delete_failed: "Delete Failed",
+        delete_err: "Delete failed.",
+        checking: "Checking...",
+        connected: "Connected!",
+        failed: "Failed",
+        conn_failed: "Connection Failed",
+        network_err_title: "⚠️ Network Error",
+        network_err_msg: "❌ Request failed. Network error or CORS issue.",
+        search_placeholder: "Search providers/models...",
+        add_custom: "+ Custom Provider",
+        usage_stats: "Usage Stats",
+        new_custom: "New Custom Provider",
+        on: "ON",
+        off: "OFF",
+        usage_loading: "Loading usage history...",
+        usage_api_404: "Usage API not available. Please restart ComfyUI to activate the new route.",
+        usage_api_err: "API error: HTTP ",
+        usage_dashboard: "API Usage Dashboard",
+        usage_empty: "No usage data recorded yet. Run a generation first.",
+        total_calls: "Total Calls",
+        success_error: "Success / Error",
+        total_tokens: "Total Tokens",
+        avg_latency: "Avg Latency",
+        status: "Status",
+        time: "Time",
+        provider: "Provider",
+        model: "Model",
+        tokens_in_out: "Tokens (In/Out)",
+        latency: "Latency",
+        usage_load_err: "Failed to load usage data. Check logs.",
+        select_edit: "Select a provider from the sidebar to edit.",
+        provider_name: "Provider Name",
+        enable_nodes: "Enable in Nodes",
+        base_url: "Base URL",
+        api_key: "API Key",
+        keys_hint: "Keys are stored locally in config/providers.json in plaintext.",
+        avail_models: "Available Models",
+        add_model: "+ Add Model",
+        del_model: "Delete model",
+        db_edit: "Double-click to edit",
+        edit_model_name: "Edit Model Name:",
+        enter_model_name: "Enter Model Name (e.g. gpt-4o):",
+        save: "Save",
+        saving: "⏳ Saving...",
+        saved: "✅ Saved!",
+        delete: "Delete",
+        preview: "Preview: ",
+        lang_switch: "中"
+    },
+    zh: {
+        manager_title: "LLMs 模型管家",
+        unsaved_title: "未保存更改",
+        unsaved_msg: "你有未保存的更改。\n确定要放弃它们吗？",
+        cancel: "取消",
+        ok: "好的",
+        confirm: "确认",
+        error: "错误",
+        load_error: "加载配置失败，请检查终端日志。",
+        save_failed: "保存失败",
+        save_err: "保存配置失败。",
+        delete_title: "删除供应商",
+        delete_msg: "确定要删除这个自定义供应商吗？\n此操作无法撤销。",
+        delete_failed: "删除失败",
+        delete_err: "删除供应商失败。",
+        checking: "检测中...",
+        connected: "连通成功！",
+        failed: "连接失败",
+        conn_failed: "连接失败",
+        network_err_title: "⚠️ 网络错误",
+        network_err_msg: "❌ 请求失败。网络错误或存在跨域(CORS)限制。",
+        search_placeholder: "搜索 供应商/模型...",
+        add_custom: "+ 自定义模型库",
+        usage_stats: "用量统计",
+        new_custom: "新建供应商",
+        on: "启用",
+        off: "禁用",
+        usage_loading: "正在加载用量历史...",
+        usage_api_404: "未找到用量 API。请重启 ComfyUI 以使新路由生效。",
+        usage_api_err: "API 错误: HTTP ",
+        usage_dashboard: "API 用量仪表盘",
+        usage_empty: "暂无用量记录。请先运行一次生成。",
+        total_calls: "总调用次数",
+        success_error: "成功 / 失败",
+        total_tokens: "消耗总 Token",
+        avg_latency: "平均延迟",
+        status: "状态",
+        time: "时间",
+        provider: "供应商",
+        model: "模型",
+        tokens_in_out: "Tokens (入/出)",
+        latency: "延迟",
+        usage_load_err: "加载用量数据失败，请检查日志。",
+        select_edit: "请从左侧选择一个供应商进行编辑。",
+        provider_name: "供应商名称",
+        enable_nodes: "在节点中启用",
+        base_url: "接口地址 (Base URL)",
+        api_key: "访问密钥 (API Key)",
+        keys_hint: "注意: Key 以明文形式保存在插件的 config/providers.json 中。",
+        avail_models: "可用模型",
+        add_model: "+ 添加模型",
+        del_model: "删除模型",
+        db_edit: "双击以编辑",
+        edit_model_name: "编辑模型名称:",
+        enter_model_name: "输入模型名称 (如 gpt-4o):",
+        save: "保存",
+        saving: "⏳ 保存中...",
+        saved: "✅ 已保存！",
+        delete: "删除",
+        preview: "预览: ",
+        lang_switch: "EN"
+    }
+};
+
+function getLang() {
+    return localStorage.getItem("llm_pm_lang") || "zh";
+}
+
+function t(key) {
+    const lang = getLang();
+    return I18N_DICT[lang]?.[key] || I18N_DICT["en"][key] || key;
+}
+
 // ============================================================================
 // UI Component
 // ============================================================================
@@ -61,8 +201,8 @@ class ProviderManager {
             return;
         }
         this.showConfirm(
-            "Unsaved Changes",
-            "You have unsaved changes.\\nAre you sure you want to discard them?",
+            t("unsaved_title"),
+            t("unsaved_msg"),
             onProceed
         );
     }
@@ -99,7 +239,7 @@ class ProviderManager {
         }
 
         const confirmBtn = $el("button.confirm", {
-            textContent: options.confirmText || "OK",
+            textContent: options.confirmText || t("ok"),
             onclick: () => {
                 closeDialog();
                 if (options.onConfirm) options.onConfirm(inputElement ? inputElement.value : null);
@@ -125,16 +265,16 @@ class ProviderManager {
     showPrompt(title, defaultValue, callback) {
         this.showDialog({
             title: title, showInput: true, inputDefault: defaultValue,
-            confirmText: "Confirm", onConfirm: callback
+            confirmText: t("confirm"), onConfirm: callback
         });
     }
 
     showAlert(title, message) {
-        this.showDialog({ title: title, message: message, alertOnly: true, confirmText: "OK" });
+        this.showDialog({ title: title, message: message, alertOnly: true, confirmText: t("ok") });
     }
 
     showConfirm(title, message, onConfirm) {
-        this.showDialog({ title: title, message: message, confirmText: "Confirm", onConfirm: onConfirm });
+        this.showDialog({ title: title, message: message, confirmText: t("confirm"), onConfirm: onConfirm });
     }
 
     async loadProviders() {
@@ -155,7 +295,7 @@ class ProviderManager {
             this.render();
         } catch (e) {
             console.error("[LLMs_Toolkit] Failed to load providers:", e);
-            this.showAlert("Error", "Failed to load provider configuration. Please check the terminal logs.");
+            this.showAlert(t("error"), t("load_error"));
         }
     }
 
@@ -171,18 +311,18 @@ class ProviderManager {
                 this.selectedId = data.provider.id;
                 this.render();
             } else {
-                this.showAlert("Save Failed", data.error);
+                this.showAlert(t("save_failed"), data.error);
             }
         } catch (e) {
             console.error(e);
-            this.showAlert("Error", "Save failed.");
+            this.showAlert(t("error"), t("save_err"));
         }
     }
 
     async deleteProvider(id) {
         this.showConfirm(
-            "Delete Provider",
-            "Are you sure you want to delete this custom provider?\\nThis action cannot be undone.",
+            t("delete_title"),
+            t("delete_msg"),
             async () => {
                 try {
                     const res = await api.fetchApi(`/llm_toolkit/providers/${id}`, { method: "DELETE" });
@@ -191,11 +331,11 @@ class ProviderManager {
                         if (this.selectedId === id) this.selectedId = null;
                         await this.loadProviders();
                     } else {
-                        this.showAlert("Delete Failed", data.error);
+                        this.showAlert(t("delete_failed"), data.error);
                     }
                 } catch (e) {
                     console.error(e);
-                    this.showAlert("Error", "Delete failed.");
+                    this.showAlert(t("error"), t("delete_err"));
                 }
             }
         );
@@ -210,7 +350,7 @@ class ProviderManager {
         const originalColor = btn.style.color;
 
         // Loading State
-        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="llm-pm-spin" style="margin-right:6px"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg> Checking...`;
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="llm-pm-spin" style="margin-right:6px"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg> ` + t("checking");
         btn.disabled = true;
 
         try {
@@ -222,14 +362,14 @@ class ProviderManager {
 
             if (data.status === "ok") {
                 // Success State
-                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><polyline points="20 6 9 17 4 12"></polyline></svg> Connected!`;
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><polyline points="20 6 9 17 4 12"></polyline></svg> ` + t("connected");
                 btn.style.background = "rgba(52, 211, 153, 0.15)";
                 btn.style.color = "var(--glass-success)";
                 btn.style.borderColor = "var(--glass-success)";
                 btn.style.boxShadow = "0 0 12px var(--glass-success-glow)";
             } else {
                 // Error State
-                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Failed`;
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> ` + t("failed");
                 btn.style.background = "rgba(248, 113, 113, 0.15)";
                 btn.style.color = "var(--glass-danger)";
                 btn.style.borderColor = "var(--glass-danger)";
@@ -237,13 +377,13 @@ class ProviderManager {
                 console.warn("[LLMs Toolkit] Connect Error: ", data.message);
 
                 // Still show the alert for the specific error message
-                setTimeout(() => this.showAlert("Connection Failed", "❌ " + data.message), 100);
+                setTimeout(() => this.showAlert(t("conn_failed"), "❌ " + data.message), 100);
             }
         } catch (e) {
             console.error(e);
-            btn.innerHTML = `⚠️ Network Error`;
+            btn.innerHTML = t("network_err_title");
             btn.style.color = "#fbbf24";
-            setTimeout(() => this.showAlert("Error", "❌ Request failed. Network error or CORS issue."), 100);
+            setTimeout(() => this.showAlert(t("error"), `❌ ${t("network_err_msg")}`), 100);
         } finally {
             // Reset button after 3 seconds
             setTimeout(() => {
@@ -284,7 +424,7 @@ class ProviderManager {
 
         const searchInput = $el("input", {
             type: "text",
-            placeholder: "Search providers/models...",
+            placeholder: t("search_placeholder"),
             oninput: (e) => {
                 this.searchQuery = e.target.value.toLowerCase();
                 this.renderSidebar();
@@ -292,7 +432,7 @@ class ProviderManager {
         });
 
         const addBtn = $el("button.llm-pm-add-btn", {
-            textContent: "+ Custom Provider",
+            textContent: t("add_custom"),
             onclick: () => {
                 this.checkUnsaved(() => this.createNewProvider());
             },
@@ -300,7 +440,7 @@ class ProviderManager {
         });
 
         const usageBtn = $el("button.llm-pm-add-btn", {
-            innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M13 5h8" /><path d="M13 9h5" /><path d="M13 15h8" /><path d="M13 19h5" /><path d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /></svg> Usage Stats`,
+            innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M13 5h8" /><path d="M13 9h5" /><path d="M13 15h8" /><path d="M13 19h5" /><path d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /></svg> ` + t("usage_stats"),
             onclick: () => {
                 this.checkUnsaved(() => {
                     this.selectedId = "USAGE_STATS";
@@ -315,7 +455,32 @@ class ProviderManager {
             style: { display: "flex", zIndex: 10000 }
         }, [
             $el("div.llm-pm-header", [
-                $el("h2.llm-pm-title", "LLMs Toolkit Manager"),
+                
+                $el("h2.llm-pm-title", [
+                    t("manager_title"),
+                    $el("button", {
+                        textContent: t("lang_switch"),
+                        title: "Switch Language",
+                        onclick: () => {
+                            const current = getLang();
+                            localStorage.setItem("llm_pm_lang", current === "zh" ? "en" : "zh");
+                            // Re-render UI
+                            this.modal.remove();
+                            this.modal = null;
+                            this.show();
+                        },
+                        style: {
+                            marginLeft: "12px",
+                            padding: "2px 8px",
+                            fontSize: "0.6em",
+                            borderRadius: "12px",
+                            background: "rgba(255,255,255,0.1)",
+                            border: "1px solid rgba(255,255,255,0.2)",
+                            color: "var(--glass-text-secondary)",
+                            cursor: "pointer"
+                        }
+                    })
+                ]),
                 closeBtn
             ]),
             $el("div.llm-pm-body", [
@@ -335,7 +500,7 @@ class ProviderManager {
         const newTempId = "temp-" + Date.now();
         const newProvider = {
             id: newTempId,
-            name: "New Custom Provider",
+            name: t("new_custom"),
             type: "openai",
             apiKey: "",
             apiHost: "",
@@ -374,7 +539,7 @@ class ProviderManager {
         filtered.forEach(p => {
             const isActive = this.selectedId === p.id;
 
-            const tags = [$el("span.llm-pm-tag" + (p.enabled ? ".on" : ""), p.enabled ? "ON" : "OFF")];
+            const tags = [$el("span.llm-pm-tag" + (p.enabled ? ".on" : ""), p.enabled ? t("on") : t("off"))];
 
             const item = $el("div.llm-pm-item" + (isActive ? ".active" : ""), {
                 onclick: () => {
@@ -401,7 +566,7 @@ class ProviderManager {
         this.contentContainer.innerHTML = "";
 
         if (this.selectedId === "USAGE_STATS") {
-            const loading = $el("div.llm-pm-empty", "Loading usage history...");
+            const loading = $el("div.llm-pm-empty", t("usage_loading"));
             this.contentContainer.appendChild(loading);
 
             try {
@@ -409,19 +574,19 @@ class ProviderManager {
                 if (!res.ok) {
                     this.contentContainer.innerHTML = "";
                     if (res.status === 404) {
-                        this.contentContainer.appendChild($el("div.llm-pm-empty", "Usage API not available. Please restart ComfyUI to activate the new route."));
+                        this.contentContainer.appendChild($el("div.llm-pm-empty", t("usage_api_404")));
                     } else {
-                        this.contentContainer.appendChild($el("div.llm-pm-empty", `API error: HTTP ${res.status}. Check terminal logs.`));
+                        this.contentContainer.appendChild($el("div.llm-pm-empty", `${t("usage_api_err")}${res.status}.`));
                     }
                     return;
                 }
                 const data = await res.json();
 
                 this.contentContainer.innerHTML = "";
-                this.contentContainer.appendChild($el("h2", { textContent: "API Usage Dashboard", style: { margin: "0 0 12px 0" } }));
+                this.contentContainer.appendChild($el("h2", { textContent: t("usage_dashboard"), style: { margin: "0 0 12px 0" } }));
 
                 if (!data.usage || data.usage.length === 0) {
-                    this.contentContainer.appendChild($el("div.llm-pm-empty", "No usage data recorded yet. Run a generation first."));
+                    this.contentContainer.appendChild($el("div.llm-pm-empty", t("usage_empty")));
                     return;
                 }
 
@@ -441,19 +606,19 @@ class ProviderManager {
 
                 const summaryRow = $el("div", { style: { display: "flex", gap: "12px", marginBottom: "16px" } }, [
                     $el("div", { style: cardStyle }, [
-                        $el("div", { style: cardLabel, textContent: "Total Calls" }),
+                        $el("div", { style: cardLabel, textContent: t("total_calls") }),
                         $el("div", { style: cardValue, textContent: String(totalCalls) })
                     ]),
                     $el("div", { style: cardStyle }, [
-                        $el("div", { style: cardLabel, textContent: "Success / Error" }),
+                        $el("div", { style: cardLabel, textContent: t("success_error") }),
                         $el("div", { style: cardValue, innerHTML: `<span style="color:#4CAF50">${okCalls}</span> / <span style="color:${errorCalls > 0 ? '#f44336' : 'var(--descrip-text)'}">${errorCalls}</span>` })
                     ]),
                     $el("div", { style: cardStyle }, [
-                        $el("div", { style: cardLabel, textContent: "Total Tokens" }),
+                        $el("div", { style: cardLabel, textContent: t("total_tokens") }),
                         $el("div", { style: cardValue, textContent: fmtTokens(totalTokens) })
                     ]),
                     $el("div", { style: cardStyle }, [
-                        $el("div", { style: cardLabel, textContent: "Avg Latency" }),
+                        $el("div", { style: cardLabel, textContent: t("avg_latency") }),
                         $el("div", { style: cardValue, textContent: `${avgLatency} ms` })
                     ]),
                 ]);
@@ -462,7 +627,7 @@ class ProviderManager {
                 // ── Data Table ─────────────────────────────────────────
                 const table = $el("table", { style: { width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.9em" } });
                 const thead = $el("tr", { style: { borderBottom: "2px solid var(--border-color)", color: "var(--descrip-text)" } });
-                ["Status", "Time", "Provider", "Model", "Tokens (In/Out)", "Latency"].forEach(h => {
+                [t("status"), t("time"), t("provider"), t("model"), t("tokens_in_out"), t("latency")].forEach(h => {
                     thead.appendChild($el("th", { style: { padding: "8px" }, textContent: h }));
                 });
                 table.appendChild(thead);
@@ -473,7 +638,7 @@ class ProviderManager {
                     const tr = $el("tr", { style: { borderBottom: "1px solid var(--border-color)", background: isError ? "rgba(244,67,54,0.08)" : "transparent" } });
                     const date = new Date(row.timestamp * 1000).toLocaleString();
 
-                    tr.appendChild($el("td", { style: { padding: "8px", textAlign: "center" }, innerHTML: isError ? `<span style="color:#f44336" title="Error">✗</span>` : `<span style="color:#4CAF50" title="OK">✓</span>` }));
+                    tr.appendChild($el("td", { style: { padding: "8px", textAlign: "center" }, innerHTML: isError ? `<span style="color:#f44336" title=t("error")>✗</span>` : `<span style="color:#4CAF50" title=t("ok")>✓</span>` }));
                     tr.appendChild($el("td", { style: { padding: "8px" }, textContent: date }));
                     tr.appendChild($el("td", { style: { padding: "8px", fontWeight: "bold" }, textContent: row.provider }));
                     tr.appendChild($el("td", { style: { padding: "8px" }, textContent: row.model }));
@@ -488,7 +653,7 @@ class ProviderManager {
             } catch (e) {
                 console.error(e);
                 this.contentContainer.innerHTML = "";
-                this.contentContainer.appendChild($el("div.llm-pm-empty", "Failed to load usage data. Check logs."));
+                this.contentContainer.appendChild($el("div.llm-pm-empty", t("usage_load_err")));
             }
             return;
         }
@@ -496,7 +661,7 @@ class ProviderManager {
         const provider = this.providers.find(p => p.id === this.selectedId);
         if (!provider) {
             this.contentContainer.appendChild(
-                $el("div.llm-pm-empty", "Select a provider from the sidebar to edit.")
+                $el("div.llm-pm-empty", t("select_edit"))
             );
             return;
         }
@@ -510,7 +675,7 @@ class ProviderManager {
             id: "pm-input-name",
             type: "text",
             value: draft.name,
-            placeholder: "Provider Name",
+            placeholder: t("provider_name"),
             oninput: (e) => draft.name = e.target.value
         });
 
@@ -600,7 +765,7 @@ class ProviderManager {
             oninput: (e) => {
                 draft.apiHost = e.target.value;
                 const prev = document.getElementById("pm-url-preview");
-                if (prev) prev.textContent = `Preview: ${draft.apiHost} /chat/completions`;
+                if (prev) prev.textContent = `${t("preview")}${draft.apiHost} /chat/completions`;
             }
         });
 
@@ -612,9 +777,9 @@ class ProviderManager {
                 const nameSpan = $el("span", {
                     textContent: m,
                     style: { cursor: "pointer" },
-                    title: "Double-click to edit",
+                    title: t("db_edit"),
                     ondblclick: () => {
-                        this.showPrompt("Edit Model Name:", m, (newName) => {
+                        this.showPrompt(t("edit_model_name"), m, (newName) => {
                             if (newName && newName.trim()) {
                                 draft.models[idx] = newName.trim();
                                 renderModels();
@@ -626,7 +791,7 @@ class ProviderManager {
                     nameSpan,
                     $el("span.llm-pm-model-del", {
                         innerHTML: "&times;",
-                        title: "Delete model",
+                        title: t("del_model"),
                         onclick: () => {
                             draft.models.splice(idx, 1);
                             renderModels();
@@ -637,9 +802,9 @@ class ProviderManager {
 
             // Add button
             modelsContainer.appendChild($el("span.llm-pm-model-add", {
-                textContent: "+ Add Model",
+                textContent: t("add_model"),
                 onclick: () => {
-                    this.showPrompt("Enter Model Name (e.g. gpt-4o):", "", (name) => {
+                    this.showPrompt(t("enter_model_name"), "", (name) => {
                         if (name && name.trim()) {
                             draft.models.push(name.trim());
                             renderModels();
@@ -652,7 +817,7 @@ class ProviderManager {
 
         // -- Action Buttons
         const saveBtn = $el("button", {
-            innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M16 3a1 1 0 0 1 .707 .293l4 4a1 1 0 0 1 .293 .707v10a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h1v4a1 1 0 0 0 .883 .993l.117 .007h6a1 1 0 0 0 1 -1v-4zm-4 8a2.995 2.995 0 0 0 -2.995 2.898a1 1 0 0 0 -.005 .102a3 3 0 1 0 3 -3m1 -8v3h-4v-3z" /></svg> Save`,
+            innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M16 3a1 1 0 0 1 .707 .293l4 4a1 1 0 0 1 .293 .707v10a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h1v4a1 1 0 0 0 .883 .993l.117 .007h6a1 1 0 0 0 1 -1v-4zm-4 8a2.995 2.995 0 0 0 -2.995 2.898a1 1 0 0 0 -.005 .102a3 3 0 1 0 3 -3m1 -8v3h-4v-3z" /></svg> ` + t("save"),
             style: {
                 fontWeight: "bold", background: "#4CAF50", color: "white",
                 padding: "6px 16px", fontSize: "0.9em", borderRadius: "4px", minHeight: "unset",
@@ -660,13 +825,13 @@ class ProviderManager {
             },
             onclick: async () => {
                 const originalHtml = saveBtn.innerHTML;
-                saveBtn.innerHTML = `⏳ Saving...`;
+                saveBtn.innerHTML = t("saving");
                 saveBtn.disabled = true;
 
                 if (draft._isNew) delete draft._isNew;
                 await this.saveProvider(draft);
 
-                saveBtn.innerHTML = `✅ Saved!`;
+                saveBtn.innerHTML = t("saved");
                 saveBtn.style.background = "#3d8b40"; // slightly darker green
                 setTimeout(() => {
                     saveBtn.innerHTML = originalHtml;
@@ -677,7 +842,7 @@ class ProviderManager {
         });
 
         const deleteBtn = $el("button", {
-            innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19 2a3 3 0 0 1 3 3v14a3 3 0 0 1 -3 3h-14a3 3 0 0 1 -3 -3v-14a3 3 0 0 1 3 -3zm-4 9h-6l-.117 .007a1 1 0 0 0 .117 1.993h6l.117 -.007a1 1 0 0 0 -.117 -1.993z" /></svg> Delete`,
+            innerHTML: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19 2a3 3 0 0 1 3 3v14a3 3 0 0 1 -3 3h-14a3 3 0 0 1 -3 -3v-14a3 3 0 0 1 3 -3zm-4 9h-6l-.117 .007a1 1 0 0 0 .117 1.993h6l.117 -.007a1 1 0 0 0 -.117 -1.993z" /></svg> ` + t("delete"),
             style: {
                 color: "var(--error-text)", borderColor: "var(--error-text)",
                 padding: "6px 16px", fontSize: "0.9em", borderRadius: "4px", minHeight: "unset",
@@ -691,9 +856,9 @@ class ProviderManager {
         const fields = [
             $el("div.llm-pm-field", [
                 $el("label", [
-                    $el("span", "Provider Name"),
+                    $el("span", t("provider_name")),
                     $el("div", { style: { display: "flex", alignItems: "center", gap: "8px" } }, [
-                        $el("span", { style: { fontSize: "0.8em", fontWeight: "normal" } }, "Enable in Nodes"),
+                        $el("span", { style: { fontSize: "0.8em", fontWeight: "normal" } }, t("enable_nodes")),
                         enableSwitch
                     ])
                 ]),
@@ -701,22 +866,22 @@ class ProviderManager {
             ]),
 
             $el("div.llm-pm-field", [
-                $el("label", "Base URL"),
+                $el("label", t("base_url")),
                 urlInput,
                 $el("div.llm-pm-field-hint", {
                     id: "pm-url-preview",
-                    textContent: `Preview: ${draft.apiHost} /chat/completions`
+                    textContent: `${t("preview")}${draft.apiHost} /chat/completions`
                 })
             ]),
 
             $el("div.llm-pm-field", [
-                $el("label", "API Key"),
+                $el("label", t("api_key")),
                 $el("div.llm-pm-input-group", [keyInputWrapper, checkBtn]),
-                $el("div.llm-pm-field-hint", "Keys are stored locally in config/providers.json in plaintext.")
+                $el("div.llm-pm-field-hint", t("keys_hint"))
             ]),
 
             $el("div.llm-pm-field", [
-                $el("label", "Available Models"),
+                $el("label", t("avail_models")),
                 modelsContainer
             ]),
 
