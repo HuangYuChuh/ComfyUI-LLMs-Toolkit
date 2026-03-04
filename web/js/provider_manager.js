@@ -375,7 +375,6 @@ class ProviderManager {
             const isActive = this.selectedId === p.id;
 
             const tags = [$el("span.llm-pm-tag" + (p.enabled ? ".on" : ""), p.enabled ? "ON" : "OFF")];
-            if (p.isSystem) tags.unshift($el("span.llm-pm-tag", "System"));
 
             const item = $el("div.llm-pm-item" + (isActive ? ".active" : ""), {
                 onclick: () => {
@@ -692,7 +691,7 @@ class ProviderManager {
         const fields = [
             $el("div.llm-pm-field", [
                 $el("label", [
-                    $el("span", "Provider Name" + (draft.isSystem ? " (System)" : "")),
+                    $el("span", "Provider Name"),
                     $el("div", { style: { display: "flex", alignItems: "center", gap: "8px" } }, [
                         $el("span", { style: { fontSize: "0.8em", fontWeight: "normal" } }, "Enable in Nodes"),
                         enableSwitch
