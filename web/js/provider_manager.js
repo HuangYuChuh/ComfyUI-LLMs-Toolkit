@@ -432,10 +432,15 @@ class ProviderManager {
             onclick: closeModal
         });
 
+        // Clean up any existing listeners before adding a new one (fixes bug where ESC gets lost on UI re-renders like language change)
+        if (this._escListener) {
+            window.removeEventListener("keydown", this._escListener);
+        }
+
         // Add ESC listener
         this._escListener = (e) => {
             if (e.key === "Escape" && this.modal && this.modal.style.display !== "none") {
-                // Ignore if there is another dialog overlay active (like unsaved changes prompt)
+                // Ignore if there is another dialog overlay active (like unsaved changes prompt or name edit)
                 if (!document.querySelector(".llm-pm-prompt-overlay")) {
                     closeModal();
                 }
