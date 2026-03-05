@@ -911,7 +911,7 @@ class ProviderManager {
         // Build DOM
         const fields = [
             $el("div.llm-pm-field", [
-                $el("label", [
+                $el("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8em", fontWeight: "600", color: "var(--glass-text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" } }, [
                     $el("span", t("provider_name")),
                     $el("div", { style: { display: "flex", alignItems: "center", gap: "8px" } }, [
                         $el("span", { style: { fontSize: "0.8em", fontWeight: "normal" } }, t("enable_nodes")),
