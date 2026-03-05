@@ -458,16 +458,17 @@
     box-shadow: 0 0 16px var(--glass-accent-glow);
 }
 
-/* Primary save button (last child) */
 .llm-pm-actions-right button:last-child {
-    background: linear-gradient(135deg, var(--glass-accent), #8b5cf6) !important;
-    color: white !important;
-    border: none !important;
-    box-shadow: 0 4px 14px var(--glass-accent-glow);
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: var(--glass-text-primary) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1);
 }
 
 .llm-pm-actions-right button:last-child:hover {
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2);
     transform: translateY(-1px);
 }
 

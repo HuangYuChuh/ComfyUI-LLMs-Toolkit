@@ -412,19 +412,36 @@ class ProviderManager {
         this.contentContainer = $el("div.llm-pm-content");
         this.sidebarListContainer = $el("div.llm-pm-list");
 
+        const closeModal = () => {
+            this.checkUnsaved(() => {
+                this.modal.style.display = "none";
+                this.currentDraft = null;
+                if (this._escListener) {
+                    window.removeEventListener("keydown", this._escListener);
+                    this._escListener = null;
+                }
+                // Trigger full redraw of graph to apply changes
+                if (app.graph) {
+                    app.graph.setDirtyCanvas(true);
+                }
+            });
+        };
+
         const closeBtn = $el("span.llm-pm-close", {
             innerHTML: "&times;",
-            onclick: () => {
-                this.checkUnsaved(() => {
-                    this.modal.style.display = "none";
-                    this.currentDraft = null;
-                    // Trigger full redraw of graph to apply changes
-                    if (app.graph) {
-                        app.graph.setDirtyCanvas(true);
-                    }
-                });
-            }
+            onclick: closeModal
         });
+
+        // Add ESC listener
+        this._escListener = (e) => {
+            if (e.key === "Escape" && this.modal && this.modal.style.display !== "none") {
+                // Ignore if there is another dialog overlay active (like unsaved changes prompt)
+                if (!document.querySelector(".llm-pm-prompt-overlay")) {
+                    closeModal();
+                }
+            }
+        };
+        window.addEventListener("keydown", this._escListener);
 
         const searchInput = $el("input", {
             type: "text",
