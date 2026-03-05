@@ -401,52 +401,61 @@ class ProviderManager {
         }
     }
 
+    // ── Private: always bind ESC when modal becomes visible ──────────────
+    _attachEscListener(closeModal) {
+        // Remove any stale listener first to prevent duplicates
+        this._detachEscListener();
+        this._escListener = (e) => {
+            if (e.key !== "Escape") return;
+            // Only act when this modal is actually visible
+            if (!this.modal || this.modal.style.display === "none") return;
+            // Don't intercept ESC if a sub-dialog (e.g. unsaved-changes prompt) is active
+            if (document.querySelector(".llm-pm-prompt-overlay")) return;
+            closeModal();
+        };
+        window.addEventListener("keydown", this._escListener);
+    }
+
+    _detachEscListener() {
+        if (this._escListener) {
+            window.removeEventListener("keydown", this._escListener);
+            this._escListener = null;
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     show() {
         if (this.modal) {
+            // Modal DOM already exists — just reveal it and re-attach the ESC listener
+            // (it was detached during the previous close() call)
             this.modal.style.display = "flex";
+            this._attachEscListener(this._closeModal.bind(this));
             this.loadProviders();
             return;
         }
 
-        // Create main modal structure
+        // ── First-time: build the modal DOM ──────────────────────────────
         this.contentContainer = $el("div.llm-pm-content");
         this.sidebarListContainer = $el("div.llm-pm-list");
 
-        const closeModal = () => {
+        // Store closeModal as an instance method so it can be referenced
+        // both here and in subsequent show() calls above
+        this._closeModal = () => {
             this.checkUnsaved(() => {
                 this.modal.style.display = "none";
                 this.currentDraft = null;
-                if (this._escListener) {
-                    window.removeEventListener("keydown", this._escListener);
-                    this._escListener = null;
-                }
-                // Trigger full redraw of graph to apply changes
-                if (app.graph) {
-                    app.graph.setDirtyCanvas(true);
-                }
+                this._detachEscListener();
+                if (app.graph) app.graph.setDirtyCanvas(true);
             });
         };
 
+        // Bind ESC for the very first open
+        this._attachEscListener(this._closeModal);
+
         const closeBtn = $el("span.llm-pm-close", {
             innerHTML: "&times;",
-            onclick: closeModal
+            onclick: this._closeModal
         });
-
-        // Clean up any existing listeners before adding a new one (fixes bug where ESC gets lost on UI re-renders like language change)
-        if (this._escListener) {
-            window.removeEventListener("keydown", this._escListener);
-        }
-
-        // Add ESC listener
-        this._escListener = (e) => {
-            if (e.key === "Escape" && this.modal && this.modal.style.display !== "none") {
-                // Ignore if there is another dialog overlay active (like unsaved changes prompt or name edit)
-                if (!document.querySelector(".llm-pm-prompt-overlay")) {
-                    closeModal();
-                }
-            }
-        };
-        window.addEventListener("keydown", this._escListener);
 
         const searchInput = $el("input", {
             type: "text",
