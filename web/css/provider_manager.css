@@ -482,6 +482,8 @@
     height: 24px;
     flex-shrink: 0;
     cursor: pointer;
+    /* Eliminate tap highlighting on mobile/touch interfaces */
+    -webkit-tap-highlight-color: transparent;
 }
 
 .llm-pm-switch input {
@@ -489,6 +491,7 @@
     width: 0;
     height: 0;
     position: absolute;
+    margin: 0;
 }
 
 .llm-pm-slider {
@@ -498,14 +501,15 @@
     border: 1.5px solid rgba(255, 255, 255, 0.1);
     background-color: rgba(255, 255, 255, 0.1);
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+    /* Snappy but silky background fade */
     transition:
-        background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-        border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-        box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color 0.25s cubic-bezier(0.25, 1, 0.5, 1),
+        border-color 0.25s cubic-bezier(0.25, 1, 0.5, 1),
+        box-shadow 0.25s cubic-bezier(0.25, 1, 0.5, 1);
     will-change: background-color;
 }
 
-/* The thumb (white circle) — spring physics */
+/* The thumb (white circle) — smooth fluid physics */
 .llm-pm-slider:before {
     content: "";
     position: absolute;
@@ -514,15 +518,16 @@
     left: 2px;
     top: 50%;
     transform: translateY(-50%) translateX(0px);
-    background: rgba(200, 200, 210, 0.9);
+    background: rgba(230, 230, 235, 1);
+    /* Slightly brighter white for pop */
     border-radius: 50%;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 0 0.5px rgba(0, 0, 0, 0.15);
-    /* cubic-bezier(0.34, 1.56, 0.64, 1): fast shoot, slight overshoot, then settle — the "Apple spring" */
+    /* iOS standard ease-out curve, short duration to eliminate "blocking" feel */
     transition:
-        transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
-        width 0.18s cubic-bezier(0.4, 0, 0.2, 1),
-        background 0.25s ease;
-    will-change: transform;
+        transform 0.28s cubic-bezier(0.25, 1.1, 0.5, 1),
+        width 0.2s cubic-bezier(0.25, 1, 0.5, 1),
+        background 0.2s ease;
+    will-change: transform, width;
 }
 
 /* Checked (ON) state */
@@ -531,23 +536,24 @@
     border-color: transparent;
     box-shadow:
         0 0 0 3px rgba(99, 102, 241, 0.18),
-        0 0 14px rgba(99, 102, 241, 0.4),
+        0 0 12px rgba(99, 102, 241, 0.35),
         inset 0 1px 2px rgba(255, 255, 255, 0.15);
 }
 
 .llm-pm-switch input:checked+.llm-pm-slider:before {
     transform: translateY(-50%) translateX(20px);
-    background: white;
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+    background: #ffffff;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3), 0 0 0 0.5px rgba(0, 0, 0, 0.1);
 }
 
 /* Press feedback — thumb squishes horizontally on mousedown */
 .llm-pm-switch:active .llm-pm-slider:before {
-    width: 22px;
+    width: 23px;
 }
 
 .llm-pm-switch:active input:checked+.llm-pm-slider:before {
-    transform: translateY(-50%) translateX(18px);
+    /* Offset the transform slightly to keep the right edge aligned when squished */
+    transform: translateY(-50%) translateX(15px);
 }
 
 /* ============================================================
