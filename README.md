@@ -154,6 +154,13 @@ Make sure to **refresh the browser** (Cmd+R / Ctrl+R) after making changes in th
 
 </details>
 
+<details>
+<summary><strong>Where is the troubleshooting guide?</strong></summary>
+
+See [`docs/troubleshooting.md`](docs/troubleshooting.md) for dependency conflicts, provider/model mismatch, and local endpoint debugging.
+
+</details>
+
 ---
 
 ## A Note on Security
@@ -163,6 +170,10 @@ Your API keys are stored **locally** on your machine in `config/providers.json`.
 ---
 
 ## Changelog
+
+### v1.2.1 — 2026-03-07
+- Sync package version metadata to match current release line
+- Add `docs/troubleshooting.md` for common dependency/provider setup issues
 
 ### v1.2.0 — 2026-03-02
 - Built-in **Provider Manager UI** with Cherry-Studio-style design

@@ -153,6 +153,13 @@ pip install -r requirements.txt
 
 </details>
 
+<details>
+<summary><strong>排障文档在哪里？</strong></summary>
+
+请查看 [`docs/troubleshooting.md`](docs/troubleshooting.md)，包含依赖冲突、模型下拉异常、本地端点配置等常见问题。
+
+</details>
+
 ---
 
 ## 安全提醒
@@ -162,6 +169,10 @@ pip install -r requirements.txt
 ---
 
 ## 更新日志
+
+### v1.2.1 — 2026-03-07
+- 同步包版本号与当前发布版本线（`pyproject.toml`）
+- 新增 `docs/troubleshooting.md`，集中说明依赖/供应商配置常见问题
 
 ### v1.2.0 — 2026-03-02
 - 内置 **Provider Manager** 可视化管理面板
