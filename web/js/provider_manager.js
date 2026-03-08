@@ -1018,58 +1018,59 @@ app.registerExtension({
 
     // Node Interception for Dynamic Model Dropdowns
     async nodeCreated(node) {
-        if (node.comfyClass === "OpenAICompatibleLoader") {
-            const providerWidget = node.widgets.find(w => w.name === "provider");
-            const modelWidget = node.widgets.find(w => w.name === "model");
+        const LINKED_NODES = ["OpenAICompatibleLoader", "LLMTranslator"];
+        if (!LINKED_NODES.includes(node.comfyClass)) return;
 
-            if (providerWidget && modelWidget) {
-                // Fetch current providers to have the mapping of Provider -> Models
-                let providersCache = [];
-                try {
-                    const res = await api.fetchApi("/llm_toolkit/providers");
-                    const data = await res.json();
-                    providersCache = data.providers || [];
-                } catch (e) {
-                    console.error("[LLMs_Toolkit] Failed to fetch providers for node", e);
-                }
+        const providerWidget = node.widgets.find(w => w.name === "provider");
+        const modelWidget = node.widgets.find(w => w.name === "model");
 
-                const updateModelOptions = (selectedProviderLabel) => {
-                    if (selectedProviderLabel === "LLM_CONFIG (from input)") {
-                        modelWidget.options.values = ["LLM_CONFIG (from input)"];
-                        if (modelWidget.value !== "LLM_CONFIG (from input)") {
-                            modelWidget.value = "LLM_CONFIG (from input)";
-                        }
-                        return;
-                    }
+        if (!providerWidget || !modelWidget) return;
 
-                    // Match provider by name, must be enabled
-                    const found = providersCache.find(p => p.name === selectedProviderLabel && p.enabled);
-                    if (found && found.models && found.models.length > 0) {
-                        modelWidget.options.values = found.models;
-                        if (!found.models.includes(modelWidget.value)) {
-                            modelWidget.value = found.models[0];
-                        }
-                    } else {
-                        modelWidget.options.values = ["LLM_CONFIG (from input)"];
-                        modelWidget.value = "LLM_CONFIG (from input)";
-                    }
-                    app.graph.setDirtyCanvas(true);
-                };
-
-                // Initial setup based on current value
-                if (providerWidget.value) {
-                    updateModelOptions(providerWidget.value);
-                }
-
-                // Listen for changes on the provider widget
-                const originalCallback = providerWidget.callback;
-                providerWidget.callback = function () {
-                    updateModelOptions(this.value);
-                    if (originalCallback) {
-                        originalCallback.apply(this, arguments);
-                    }
-                };
-            }
+        // Fetch current providers to have the mapping of Provider -> Models
+        let providersCache = [];
+        try {
+            const res = await api.fetchApi("/llm_toolkit/providers");
+            const data = await res.json();
+            providersCache = data.providers || [];
+        } catch (e) {
+            console.error("[LLMs_Toolkit] Failed to fetch providers for node", e);
         }
+
+        const updateModelOptions = (selectedProviderLabel) => {
+            if (selectedProviderLabel === "LLM_CONFIG (from input)") {
+                modelWidget.options.values = ["LLM_CONFIG (from input)"];
+                if (modelWidget.value !== "LLM_CONFIG (from input)") {
+                    modelWidget.value = "LLM_CONFIG (from input)";
+                }
+                return;
+            }
+
+            // Match provider by name, must be enabled
+            const found = providersCache.find(p => p.name === selectedProviderLabel && p.enabled);
+            if (found && found.models && found.models.length > 0) {
+                modelWidget.options.values = found.models;
+                if (!found.models.includes(modelWidget.value)) {
+                    modelWidget.value = found.models[0];
+                }
+            } else {
+                modelWidget.options.values = ["Custom Input"];
+                modelWidget.value = "Custom Input";
+            }
+            app.graph.setDirtyCanvas(true);
+        };
+
+        // Initial setup based on current value
+        if (providerWidget.value) {
+            updateModelOptions(providerWidget.value);
+        }
+
+        // Listen for changes on the provider widget
+        const originalCallback = providerWidget.callback;
+        providerWidget.callback = function () {
+            updateModelOptions(this.value);
+            if (originalCallback) {
+                originalCallback.apply(this, arguments);
+            }
+        };
     }
 });
